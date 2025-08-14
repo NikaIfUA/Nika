@@ -1,81 +1,62 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
+import { RouterLink, RouterView } from 'vue-router';
 </script>
 
 <template>
-  <header>
-    <div class="wrapper">
+  <div class="layout">
+    <aside class="sidebar">
       <nav>
+        <img src="@/assets/logo.png" alt="Logo" class="logo" />
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>
-    </div>
-  </header>
-
-  <RouterView />
+    </aside>
+    <main class="content">
+      <RouterView />
+    </main> 
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+.layout {
+  display: flex;
+  height: 100vh;
 }
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
+.sidebar {
+  width: 200px;
+  background-color: #024ea0;
+  color: white;
+  padding: 1rem;
+  position: fixed; 
+  top: 0;
+  left: 0;
+  height: 100%;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sidebar a {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem;
+  border: 1px solid white;
   text-align: center;
-  margin-top: 2rem;
+  border-radius: 5px;
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+.sidebar a:hover {
+  background-color: white;
+  color: #007bff;
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+.content {
+  margin-left: 10px;
+  flex-grow: 1;
+  padding: 1rem;
 }
 </style>
