@@ -1,4 +1,4 @@
-export function fetchInfo(req: Request): Response {
+export async function fetchHomeInfo(req: Request): Promise<Response>     {
     const url = new URL(req.url);
 
     // Обробка Preflight (OPTIONS) запитів
@@ -13,8 +13,11 @@ export function fetchInfo(req: Request): Response {
     }
 
     // Основний маршрут
-    if (req.method === "GET" && url.pathname === "/api/info") {
-        return new Response(JSON.stringify({ message: "Hello from Deno!" }), {
+    if (req.method === "GET" && url.pathname === "/api/home") {
+
+        const fileContent = await Deno.readTextFile("./storage/text.txt");
+
+        return new Response(JSON.stringify({ text: fileContent }), {
             headers: {
                 "Content-Type": "application/json",
                 "Access-Control-Allow-Origin": "*",
