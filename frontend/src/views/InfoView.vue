@@ -41,6 +41,7 @@ const fetchHomeInfo = async () => {
 </script>
 
 <template>
+  <h1>This is the info page.</h1>
   <div class="button-container">
     <a class="button" @click="fetchInfo">Get info from backend</a>
     <p v-if="showMessage">{{ message }}</p>
