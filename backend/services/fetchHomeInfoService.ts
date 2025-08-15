@@ -1,35 +1,27 @@
-export async function fetchHomeInfo(req: Request): Promise<Response>     {
-    const url = new URL(req.url);
+import { RouterContext } from "../dependencies.ts";
 
-    // Обробка Preflight (OPTIONS) запитів
-    if (req.method === "OPTIONS") {
-        return new Response(null, {
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type",
-            },
-        });
+export async function fetchHomeInfo(ctx: RouterContext<string>) {
+    const { request, response } = ctx;
+
+    if (request.method === "GET" && ctx.request.url.pathname === "/api/home") {
+        const filePath = new URL("../storage/text.txt", import.meta.url).pathname;
+        try {
+            const fileContent = await Deno.readTextFile(filePath);
+            response.status = 200;
+            response.body = { text: fileContent };
+            response.headers.set("Content-Type", "application/json");
+            response.headers.set("Access-Control-Allow-Origin", "*");
+        } catch (_error) {
+            response.status = 404;
+            response.body = "File not found";
+            response.headers.set("Access-Control-Allow-Origin", "*");
+        }
+        return response.body;
     }
 
-    // Основний маршрут
-    if (req.method === "GET" && url.pathname === "/api/home") {
+    response.status = 404;
+    response.body = "Not Found";
+    response.headers.set("Access-Control-Allow-Origin", "*");
 
-        const fileContent = await Deno.readTextFile("./storage/text.txt");
-
-        return new Response(JSON.stringify({ text: fileContent }), {
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
-        });
-    }
-
-    // Відповідь для інших маршрутів
-    return new Response("Not Found", {
-        status: 404,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-        },
-    });
+    return response.body;
 }

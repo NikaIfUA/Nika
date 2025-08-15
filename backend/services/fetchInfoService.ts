@@ -1,32 +1,12 @@
-export function fetchInfo(req: Request): Response {
-    const url = new URL(req.url);
+import { RouterContext } from "../dependencies.ts";
 
-    // Обробка Preflight (OPTIONS) запитів
-    if (req.method === "OPTIONS") {
-        return new Response(null, {
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type",
-            },
-        });
-    }
+export function fetchInfo(ctx: RouterContext<string>) {
+    const { response } = ctx;
 
-    // Основний маршрут
-    if (req.method === "GET" && url.pathname === "/api/info") {
-        return new Response(JSON.stringify({ message: "Hello from Deno!" }), {
-            headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
-        });
-    }
+    response.status = 200;
+    response.body = { message: "Hello from Deno!" };
+    response.headers.set("Content-Type", "application/json");
+    response.headers.set("Access-Control-Allow-Origin", "*");
 
-    // Відповідь для інших маршрутів
-    return new Response("Not Found", {
-        status: 404,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-        },
-    });
+    return response.body;
 }
