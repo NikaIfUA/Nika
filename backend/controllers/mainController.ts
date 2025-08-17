@@ -1,15 +1,25 @@
+import { RouterContext } from "../dependencies.ts";
 import { fetchInfo } from "../services/fetchInfoService.ts";
+import { fetchHomeInfo } from "../services/fetchHomeInfoService.ts";
 
-export function mainController(req: Request): Response {
-    if (req.method === "GET" && req.url === "/api/info") {
-        return fetchInfo(req);
+export class MainController {
+    async handle(ctx: RouterContext<any, any, any>) {
+        const { request, response } = ctx;
+
+        response.headers.set("Access-Control-Allow-Origin", "*");
+
+        if (request.method === "GET" && ctx.request.url.pathname === "/api/info") {
+            response.body = await fetchInfo(ctx);
+            return;
+        }
+
+        if (request.method === "GET" && ctx.request.url.pathname === "/api/home") {
+            response.body = await fetchHomeInfo(ctx);
+            return;
+        }
+
+        // Response for other routes
+        response.status = 404;
+        response.body = "Not Found";
     }
-
-    // Відповідь для інших маршрутів
-    return new Response("Not Found", {
-        status: 404,
-        headers: {
-            "Access-Control-Allow-Origin": "*",
-        },
-    });
 }

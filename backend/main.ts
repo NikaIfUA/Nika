@@ -1,8 +1,18 @@
-import { serve } from "https://deno.land/std@0.203.0/http/server.ts";
-import { mainController } from "./controllers/mainController.ts";
+import { Application } from "./dependencies.ts";
+import router from "./api/routes.ts";
 
-serve((req) => {
-    return mainController(req);
+const app = new Application();
+
+// CORS middleware
+app.use(async (ctx, next) => {
+  ctx.response.headers.set("Access-Control-Allow-Origin", "*");
+  ctx.response.headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  ctx.response.headers.set("Access-Control-Allow-Headers", "Content-Type");
+  await next();
 });
 
-console.log("Deno server running on http://localhost:8000");
+app.use(router.routes());
+app.use(router.allowedMethods());
+
+console.log("Oak server running on http://localhost:8000");
+await app.listen({ port: 8000 });
