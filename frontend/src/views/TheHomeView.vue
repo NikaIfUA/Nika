@@ -1,13 +1,12 @@
-<script setup lang="ts">
-import InfoView from './InfoView.vue';
-</script>
-
 <template>
   <div class="greetings">
     <h1>Welcome to the NIKA project!</h1>
     <h3>Here you can find information about the developers.</h3>
   </div>
 </template>
+
+<script setup lang="ts">
+</script>
 
 <style scoped>
 h1 {
