@@ -24,4 +24,4 @@ RUN deno cache main.ts
 EXPOSE 8000
 
 # Run the backend with watch mode for hot reload
-CMD ["deno", "run", "--allow-net", "--allow-read", "--allow-env", "--watch", "main.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-write", "--allow-read", "--allow-env", "--watch", "main.ts"]
