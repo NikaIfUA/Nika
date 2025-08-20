@@ -3,10 +3,10 @@ export interface IImage {
   url: string;
   title: string;
   description: string;
-  categoryId?: string;
-  price?: number;
-  amountAvailable?: number;
-  materialsIds?: string[];
+  category?: ICategory | null;
+  price?: number | null;
+  amountAvailable?: number | null;
+  materials?: IMaterial[] | null;
 }
 
 export interface ICategory {

@@ -1,5 +1,5 @@
 # COMMENT: Why to use so old version of Deno?
-FROM denoland/deno:alpine-2.1.4
+FROM denoland/deno:alpine-2.4.4
 
 # Set the working directory
 WORKDIR /app
