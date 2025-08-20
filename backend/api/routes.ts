@@ -7,6 +7,7 @@ const router = new Router();
 
 router.get(`/${API_PREFIX}get-info`, MainService.fetchInfo);
 router.get(`/${API_PREFIX}get-file-content/:fileName`, MainService.fetchFileContent);
+
 router.post(`/${API_PREFIX}save-image`, ImageService.uploadHandler);
 
 export default router;
