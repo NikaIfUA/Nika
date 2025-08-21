@@ -31,10 +31,12 @@ class ImageService {
       url: `${URL}${STORAGE_PATH}/images/${filename}`,
       title: imageName,
       description: imageDescription,
-      categoryId: categoryId || undefined,
-      price: price || undefined,
-      amountAvailable: amountAvailable || undefined,
-      materialsIds: materialsIds || undefined
+      category: categoryId ? { id: categoryId, name: "" } : null,
+      price: price !== null ? price : undefined,
+      amountAvailable: amountAvailable !== null ? amountAvailable : undefined,
+      materials: materialsIds && materialsIds.length
+        ? materialsIds.map((id) => ({ id, name: "" }))
+        : undefined
     };
 
     // --- TEMPORARY LOGGING ---

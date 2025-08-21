@@ -1,3 +1,4 @@
+import { Database } from "../db/crud.ts";
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH } from "../env.ts";
 
@@ -19,6 +20,34 @@ class MainService {
     } catch (err) {
       console.log(err);
       response.body = "Error: " + err;
+    }
+  }
+
+  public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
+    try {
+  const db = new Database();
+  const allImages = await db.getImages();
+
+      response.body = allImages;
+    } catch (err) {
+      console.log(err);
+      response.status = 500;
+      const errorMessage = (err instanceof Error) ? err.message : String(err);
+      response.body = { error: "Internal Server Error", message: errorMessage };
+    }
+  }
+
+  public static async getCategories({ response }: RouterContext<string>): Promise<void> {
+    try {
+  const db = new Database();
+  const categories = await db.getCategories();
+
+      response.body = categories;
+    } catch (err) {
+      console.log(err);
+      response.status = 500;
+      const errorMessage = (err instanceof Error) ? err.message : String(err);
+      response.body = { error: "Internal Server Error", message: errorMessage };
     }
   }
 }

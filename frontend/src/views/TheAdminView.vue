@@ -4,7 +4,11 @@
   <button @click="uploadImage">Upload</button>
   <BaseInput type="text" v-model="imageName" placeholder="Enter image name" />
   <BaseInput type="text" v-model="imageDescription" placeholder="Enter image description" />
-  <BaseInput type="text" v-model="imageCategory" placeholder="Enter image category" />
+  <!-- Category combobox populated from backend -->
+  <select v-model="imageCategory" class="base-input">
+    <option value="">Select category</option>
+    <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
+  </select>
   <BaseInput type="text" v-model="imagePrice" placeholder="Enter image price" />
   <BaseInput type="text" v-model="imageAmountAvailable" placeholder="Enter amount available" />
   <BaseInput type="text" v-model="imageMaterialIds" placeholder="Enter material IDs (comma-separated)" />
@@ -54,4 +58,19 @@
     const newImage: IImage = await response.json();
     console.log('Successfully uploaded:', newImage);
   }
+
+  // Fetch categories from backend on mount
+  const categories = ref<Array<{ id: string; name: string }>>([]);
+  (async function fetchCategories() {
+    try {
+      const res = await fetch(`${API_URL}/get-categories`);
+      if (res.ok) {
+        categories.value = await res.json();
+      } else {
+        console.warn('Failed to fetch categories', res.status);
+      }
+    } catch (e) {
+      console.error('Error fetching categories', e);
+    }
+  })();
 </script>
