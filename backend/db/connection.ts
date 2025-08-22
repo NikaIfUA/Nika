@@ -1,13 +1,12 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import * as schema from './schema.ts';
+import * as dbSchema from './schema.ts';
 import postgres from 'postgres';
 
-let cached: { db?: PostgresJsDatabase<typeof schema> } = {};
+const cached: { db?: PostgresJsDatabase<typeof dbSchema> } = {};
 
 export function getDbInstance(connectionString?: string) {
   if (cached.db) return cached.db;
-
-  if (!connectionString) {
+  else if (!connectionString) {
     connectionString = Deno.env.get('DB_URL') || '';
   }
 
@@ -16,9 +15,9 @@ export function getDbInstance(connectionString?: string) {
   }
 
   const client = postgres(connectionString);
-  const db = drizzle(client, { schema });
+  const db = drizzle(client, { schema: dbSchema });
   cached.db = db;
   return db;
 }
 
-export type Db = PostgresJsDatabase<typeof schema>;
+export type Db = PostgresJsDatabase<typeof dbSchema>;

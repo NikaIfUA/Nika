@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
-import { categories, images, materials } from './schema.ts';
+import { categories, images, materials, imageMaterials } from './schema.ts';
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
 console.log('Seeding started...');
@@ -16,10 +16,28 @@ const db = drizzle(client, { schema });
 
 async function seed() {
   console.log('Clearing existing data...');
-  await db.delete(images);
-  await db.delete(categories);
-  await db.delete(materials);
+  // Delete in safe order and continue on errors (e.g. relation doesn't exist)
+  const deletes: { name: string; action: () => Promise<unknown> }[] = [
+    { name: 'image_materials', action: () => db.delete(imageMaterials) },
+    { name: 'images', action: () => db.delete(images) },
+    { name: 'categories', action: () => db.delete(categories) },
+    { name: 'materials', action: () => db.delete(materials) },
+  ];
 
+  for (const d of deletes) {
+    try {
+      await d.action();
+      console.log(`Cleared table: ${d.name}`);
+    } catch (err: any) {
+      const msg = err?.message ?? String(err);
+      // If the relation doesn't exist, log and continue. Otherwise log and continue as well.
+      if (msg.includes("does not exist") && msg.includes('relation')) {
+        console.log(`Table ${d.name} does not exist, skipping delete.`);
+      } else {
+        console.log(`Warning: failed to clear ${d.name}:`, msg);
+      }
+    }
+  }
   console.log('Seeding categories...');
   const insertedCategories = await db.insert(categories).values([
     { id: 'cat_01', name: 'Nature' },
@@ -64,21 +82,38 @@ async function seed() {
     {
       id: 'mat_01',
       name: 'Cotton',
-      imageId: 'img_01',
     },
     {
       id: 'mat_02',
       name: 'Wood',
-      imageId: 'img_02',
     },
     {
       id: 'mat_03',
       name: 'Metal',
-      imageId: 'img_03',
+    },
+  ]).returning();
+
+  const insertedImageMaterials = await db.insert(imageMaterials).values([
+    {
+      id: 'img_mat_01',
+      image_id: insertedImages[0].id,
+      material_id: insertedMaterials[0].id,
+    },
+    {
+      id: 'img_mat_02',
+      image_id: insertedImages[1].id,
+      material_id: insertedMaterials[1].id,
+    },
+    {
+      id: 'img_mat_03',
+      image_id: insertedImages[2].id,
+      material_id: insertedMaterials[2].id,
     },
   ]).returning();
 
   console.log('Seeded materials:', insertedMaterials);
+
+  console.log('Seeded image materials:', insertedImageMaterials);
 
   console.log('Seeding finished successfully!');
 }

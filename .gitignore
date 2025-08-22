@@ -36,3 +36,4 @@ coverage/
 *.tar
 
 backend/drizzle/
+backend/storage/images/

@@ -39,14 +39,39 @@ class MainService {
 
   public static async getCategories({ response }: RouterContext<string>): Promise<void> {
     try {
-  const db = new Database();
-  const categories = await db.getCategories();
+      const db = new Database();
+      const categories = await db.getCategories();
 
       response.body = categories;
     } catch (err) {
       console.log(err);
-      response.status = 500;
       const errorMessage = (err instanceof Error) ? err.message : String(err);
+      // If the relation doesn't exist, return empty array instead of 500 so frontend can proceed
+      if (String(errorMessage).includes('relation') && String(errorMessage).includes('does not exist')) {
+        response.status = 200;
+        response.body = [];
+        return;
+      }
+      response.status = 500;
+      response.body = { error: "Internal Server Error", message: errorMessage };
+    }
+  }
+
+  public static async getMaterials({ response }: RouterContext<string>): Promise<void> {
+    try {
+      const db = new Database();
+      const materials = await db.getMaterials();
+
+      response.body = materials;
+    } catch (err) {
+      console.log(err);
+      const errorMessage = (err instanceof Error) ? err.message : String(err);
+      if (String(errorMessage).includes('relation') && String(errorMessage).includes('does not exist')) {
+        response.status = 200;
+        response.body = [];
+        return;
+      }
+      response.status = 500;
       response.body = { error: "Internal Server Error", message: errorMessage };
     }
   }

@@ -10,6 +10,7 @@ router.get(`/${API_PREFIX}get-info`, MainService.fetchInfo);
 router.get(`/${API_PREFIX}get-file-content/:fileName`, MainService.fetchFileContent);
 router.get(`/${API_PREFIX}get-all-images`, MainService.fetchAllImages);
 router.get(`/${API_PREFIX}get-categories`, MainService.getCategories);
+router.get(`/${API_PREFIX}get-materials`, MainService.getMaterials);
 
 router.post(`/${API_PREFIX}save-image`, ImageService.uploadHandler);
 

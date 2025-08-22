@@ -1,6 +1,7 @@
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH, URL } from "../env.ts";
 import { IImage } from "../Interfaces.ts";
+import { Database } from "../db/crud.ts";
 import { join } from "../dependencies.ts";
 
 class ImageService {
@@ -14,8 +15,7 @@ class ImageService {
     amountAvailable: number | null,
     materialsIds: string[] | null
   ): Promise<IImage> {
-    const imageId = globalThis.crypto.randomUUID();
-    const fileExtension = originalFilename.split('.').pop() || 'png';
+    const fileExtension = originalFilename.split('.').pop();
     const filename = `${imageName}.${fileExtension}`;
 
     const storageDir = join(STORAGE_PATH, 'images');
@@ -27,8 +27,8 @@ class ImageService {
     console.log(`Image saved to ${filePath}`);
 
     const newImage: IImage = {
-      id: imageId,
-      url: `${URL}${STORAGE_PATH}/images/${filename}`,
+      id: "temp-id",
+      url: `${URL}${STORAGE_PATH}images/${filename}`,
       title: imageName,
       description: imageDescription,
       category: categoryId ? { id: categoryId, name: "" } : null,
@@ -39,14 +39,21 @@ class ImageService {
         : undefined
     };
 
-    // --- TEMPORARY LOGGING ---
-    // This will log the image metadata to your console instead of saving to a database.
-    console.log("\n--- Image Metadata (Ready for DB) ---");
-    console.log(JSON.stringify(newImage, null, 2)); // Pretty-prints the JSON object
-    console.log("-------------------------------------\n");
-    // --- END OF LOGGING ---
+    // Persist to DB
+    try {
+      const db = new Database();
+      const saved = await db.createImage(newImage);
 
-    return newImage;
+      // Return the saved DB row (with DB-generated values) merged with our in-memory newImage
+      return {
+        ...newImage,
+        id: saved?.id ?? newImage.id,
+      } as IImage;
+    } catch (err) {
+      console.error('Failed to save image metadata to DB:', err);
+      // Fallback to returning the metadata object even if DB save failed
+      return newImage;
+    }
   }
 
   public static async uploadHandler(context: RouterContext<string>) {

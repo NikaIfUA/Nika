@@ -1,7 +1,8 @@
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm/';
 import * as schema from './schema.ts'; // Import all schemas
-import { categories, images, materials } from './schema.ts';
+import { categories, images, materials, imageMaterials } from './schema.ts';
+import { IImage } from '../Interfaces.ts';
 import { getDbInstance } from './connection.ts';
 
 export class Database {
@@ -12,7 +13,7 @@ export class Database {
   }
 
   async getImages() {
-    return this.db.select().from(images);
+    return await this.db.select().from(images);
   }
 
   async getImageById(id: string) {
@@ -21,18 +22,53 @@ export class Database {
   }
 
   async getImagesByCategoryId(categoryId: string) {
-    return this.db.select().from(images).where(eq(images.category_id, categoryId));
+    return await this.db.select().from(images).where(eq(images.category_id, categoryId));
   }
 
-  async getImagesByMaterialId(materialId: string) {
-    return this.db.select().from(materials).where(eq(materials.imageId, materialId));
-  }
 
   async getCategories() {
-    return this.db.select().from(categories);
+    return await this.db.select().from(categories);
   }
 
   async getMaterials() {
-    return this.db.select().from(materials);
+    return await this.db.select().from(materials);
+  }
+
+  async createImage(data: IImage) {
+    const imageId = data.id ?? globalThis.crypto.randomUUID();
+
+    const materialIds = data.materials && data.materials.length
+      ? data.materials.map((m) => m.id)
+      : null;
+
+    const categoryId = data.category?.id ?? null;
+
+    // Run inserts inside a transaction for atomicity
+    const insertedImages = await this.db.transaction(async (tx) => {
+      const { id, url, title, description, price, amountAvailable, category, ...rest } = data;
+      const [inserted] = await tx.insert(images).values({
+      id: imageId,
+      url,
+      title,
+      description: description ?? null,
+      category_id: categoryId ?? null,
+      price: price ?? null,
+      amount_available: amountAvailable ?? null,
+      ...rest,
+      }).returning();
+
+      if (materialIds && materialIds.length) {
+        const rows = materialIds.map((mid) => ({
+          id: globalThis.crypto.randomUUID(),
+          image_id: imageId,
+          material_id: mid,
+        }));
+        await tx.insert(imageMaterials).values(rows).returning();
+      }
+
+      return inserted;
+    });
+
+    return insertedImages;
   }
 }

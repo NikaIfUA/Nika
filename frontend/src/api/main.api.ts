@@ -17,6 +17,10 @@ const mainApi = {
 
   getAllCategories: async (): Promise<AxiosResponse<any[]>> => {
     return await axios.get(`${API_URL}/get-categories`);
+  },
+
+  getAllMaterials: async (): Promise<AxiosResponse<any[]>> => {
+    return await axios.get(`${API_URL}/get-materials`);
   }
 };
 
