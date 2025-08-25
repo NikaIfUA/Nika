@@ -1,6 +1,7 @@
 import { Database } from "../db/crud.ts";
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH } from "../env.ts";
+import { ImageModel } from "../models/image.ts";
 
 class MainService {
   public static fetchInfo({ response }: RouterContext<string>): void {
@@ -25,8 +26,8 @@ class MainService {
 
   public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
-  const db = new Database();
-  const allImages = await db.getImages();
+      const model = new ImageModel();
+      const allImages = await model.getImages();
 
       response.body = allImages;
     } catch (err) {
