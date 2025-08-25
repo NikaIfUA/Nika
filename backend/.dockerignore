@@ -1,0 +1,13 @@
+.deno
+node_modules
+node_modules/
+node_modules/.deno
+npm-debug.log
+.git
+.gitignore
+dist
+/.env
+*.log
+__pycache__
+*.pyc
+venv/

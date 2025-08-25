@@ -5,12 +5,13 @@
       <RouterLink to="/">Home</RouterLink>
       <RouterLink to="/about">About</RouterLink>
       <RouterLink to="/info">Info</RouterLink>
+      <RouterLink to="/admin">Admin</RouterLink>
     </nav>
   </header>
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router';
+  import { RouterLink } from 'vue-router';
 </script>
 
 <style scoped>

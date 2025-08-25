@@ -9,6 +9,18 @@ const mainApi = {
 
   getInfo: async (): Promise<AxiosResponse<string>> => {
     return await axios.get(`${API_URL}/get-info`);
+  },
+
+  getAllImages: async (): Promise<AxiosResponse<any[]>> => {
+    return await axios.get(`${API_URL}/get-all-images`);
+  },
+
+  getAllCategories: async (): Promise<AxiosResponse<any[]>> => {
+    return await axios.get(`${API_URL}/get-categories`);
+  },
+
+  getAllMaterials: async (): Promise<AxiosResponse<any[]>> => {
+    return await axios.get(`${API_URL}/get-materials`);
   }
 };
 

@@ -1,5 +1,5 @@
 # COMMENT: Why to use so old version of Deno?
-FROM denoland/deno:alpine-2.1.4
+FROM denoland/deno:alpine-2.4.4
 
 # Set the working directory
 WORKDIR /app
@@ -24,4 +24,4 @@ RUN deno cache main.ts
 EXPOSE 8000
 
 # Run the backend with watch mode for hot reload
-CMD ["deno", "run", "--allow-net", "--allow-read", "--allow-env", "--watch", "main.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-write", "--allow-read", "--allow-env", "--watch", "main.ts"]

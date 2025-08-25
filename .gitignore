@@ -34,3 +34,6 @@ coverage/
 *.tgz
 *.zip
 *.tar
+
+backend/drizzle/
+backend/storage/images/
