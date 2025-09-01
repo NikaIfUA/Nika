@@ -1,8 +1,6 @@
 import { PostgresJsDatabase } from '../dependencies.ts';
-import { eq } from 'drizzle-orm/';
-import * as schema from './schema.ts'; // Import all schemas
-import { categories, images, materials, imageMaterials } from './schema.ts';
-import { IImage } from '../Interfaces.ts';
+import * as schema from './schema.ts';
+import { categories, materials } from './schema.ts';
 import { getDbInstance } from './connection.ts';
 
 export class Database {

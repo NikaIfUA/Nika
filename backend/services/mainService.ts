@@ -1,7 +1,6 @@
 import { Database } from "../db/crud.ts";
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH } from "../env.ts";
-import { ImageModel } from "../models/image.ts";
 
 class MainService {
   public static fetchInfo({ response }: RouterContext<string>): void {
@@ -21,20 +20,6 @@ class MainService {
     } catch (err) {
       console.log(err);
       response.body = "Error: " + err;
-    }
-  }
-
-  public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
-    try {
-      const model = new ImageModel();
-      const allImages = await model.getImages();
-
-      response.body = allImages;
-    } catch (err) {
-      console.log(err);
-      response.status = 500;
-      const errorMessage = (err instanceof Error) ? err.message : String(err);
-      response.body = { error: "Internal Server Error", message: errorMessage };
     }
   }
 

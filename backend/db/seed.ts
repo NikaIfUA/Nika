@@ -1,8 +1,7 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { drizzle } from '../dependencies.ts';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
 import { categories, images, materials, imageMaterials } from './schema.ts';
-import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
 console.log('Seeding started...');
 
@@ -16,7 +15,6 @@ const db = drizzle(client, { schema });
 
 async function seed() {
   console.log('Clearing existing data...');
-  // Delete in safe order and continue on errors (e.g. relation doesn't exist)
   const deletes: { name: string; action: () => Promise<unknown> }[] = [
     { name: 'image_materials', action: () => db.delete(imageMaterials) },
     { name: 'images', action: () => db.delete(images) },
@@ -40,80 +38,90 @@ async function seed() {
   }
   console.log('Seeding categories...');
   const insertedCategories = await db.insert(categories).values([
-    { id: 'cat_01', name: 'Nature' },
-    { id: 'cat_02', name: 'Architecture' },
-    { id: 'cat_03', name: 'Animals' },
+    { id: globalThis.crypto.randomUUID(), name: 'Nature' },
+    { id: globalThis.crypto.randomUUID(), name: 'Architecture' },
+    { id: globalThis.crypto.randomUUID(), name: 'Animals' },
   ]).returning();
 
   console.log('Seeded categories:', insertedCategories);
 
-  console.log('Seeding images...');
-  const insertedImages = await db.insert(images).values([
-    {
-      id: 'img_01',
-      url: 'https://example.com/images/forest.jpg',
-      title: 'Enchanted Forest',
-      category_id: insertedCategories.find(c => c.name === 'Nature')?.id, // Find the correct ID
-      price: 150,
-      amount_available: 10,
-    },
-    {
-      id: 'img_02',
-      url: 'https://example.com/images/architecture.jpg',
-      title: 'Modern Architecture',
-      category_id: insertedCategories.find(c => c.name === 'Architecture')?.id,
-      price: 200,
-      amount_available: 5,
-    },
-    {
-      id: 'img_03',
-      url: 'https://example.com/images/animals.jpg',
-      title: 'Wild Animals',
-      category_id: insertedCategories.find(c => c.name === 'Animals')?.id,
-      price: 300,
-      amount_available: 8,
-    },
-  ]).returning();
-
-  console.log('Seeded images:', insertedImages);
-
   console.log('Seeding materials...');
   const insertedMaterials = await db.insert(materials).values([
     {
-      id: 'mat_01',
+      id: globalThis.crypto.randomUUID(),
       name: 'Cotton',
     },
     {
-      id: 'mat_02',
+      id: globalThis.crypto.randomUUID(),
       name: 'Wood',
     },
     {
-      id: 'mat_03',
+      id: globalThis.crypto.randomUUID(),
       name: 'Metal',
     },
   ]).returning();
+  console.log('Seeded materials:', insertedMaterials);
 
-  const insertedImageMaterials = await db.insert(imageMaterials).values([
+  console.log('Seeding images...');
+  const imageSeedData = [
     {
-      id: 'img_mat_01',
-      image_id: insertedImages[0].id,
+      id: globalThis.crypto.randomUUID(),
+      image_data: new TextEncoder().encode('seed-image-1'), // placeholder
+      mime_type: 'image/jpeg',
+      title: 'Enchanted Forest',
+      description: 'A mystical forest shimmering with morning dew.',
+      category_id: insertedCategories.find(c => c.name === 'Nature')?.id!,
+      price: '149.99',
+      amount_available: 10,
+    },
+    {
+      id: globalThis.crypto.randomUUID(),
+      image_data: new TextEncoder().encode('seed-image-2'),
+      mime_type: 'image/png',
+      title: 'Metropolis Skyline',
+      description: 'The sharp lines of a futuristic city at dusk.',
+      category_id: insertedCategories.find(c => c.name === 'Architecture')?.id!,
+      price: '210.50',
+      amount_available: 5,
+    },
+    {
+      id: globalThis.crypto.randomUUID(),
+      image_data: new TextEncoder().encode('seed-image-3'),
+      mime_type: 'image/jpeg',
+      title: 'Majestic Lion',
+      description: 'A portrait of a lion, king of the savannah.',
+      category_id: insertedCategories.find(c => c.name === 'Animals')?.id!,
+      price: '180.00',
+      amount_available: 8,
+    },
+  ];
+
+  const seededImages = await db.insert(schema.images).values(imageSeedData).returning();
+  console.log('Seeded images:', seededImages);
+
+  console.log('Seeding image-material relations...');
+  const imageMaterialData = [
+    {
+      id: globalThis.crypto.randomUUID(),
+      image_id: seededImages[0].id,
       material_id: insertedMaterials[0].id,
     },
     {
-      id: 'img_mat_02',
-      image_id: insertedImages[1].id,
+      id: globalThis.crypto.randomUUID(),
+      image_id: seededImages[0].id,
       material_id: insertedMaterials[1].id,
     },
     {
-      id: 'img_mat_03',
-      image_id: insertedImages[2].id,
+      id: globalThis.crypto.randomUUID(),
+      image_id: seededImages[2].id,
       material_id: insertedMaterials[2].id,
     },
-  ]).returning();
+  ];
 
-  console.log('Seeded materials:', insertedMaterials);
+  console.log('Image-Material relations to insert:', imageMaterialData);
 
-  console.log('Seeded image materials:', insertedImageMaterials);
+  await db.insert(schema.imageMaterials).values(imageMaterialData).returning();
+  console.log('✅ Seeded image-material relations:', imageMaterialData);
 
   console.log('Seeding finished successfully!');
 }

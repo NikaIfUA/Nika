@@ -1,8 +1,9 @@
 export interface IImage {
   id: string;
-  url: string;
+  imageData?: Uint8Array;
+  mimeType?: string;
   title: string;
-  description: string;
+  description?: string;
   category?: ICategory | null;
   price?: number | null;
   amountAvailable?: number | null;

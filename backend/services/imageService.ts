@@ -1,5 +1,4 @@
-import { RouterContext, join } from "../dependencies.ts";
-import { STORAGE_PATH, URL } from "../env.ts";
+import { RouterContext } from "../dependencies.ts";
 import { IImage } from "../Interfaces.ts";
 import { ImageModel } from "../models/image.ts";
 
@@ -24,7 +23,7 @@ class ImageService {
       const amountAvailableValue = formData.get("amountAvailable");
       const amountAvailable = amountAvailableValue !== null ? Number(amountAvailableValue.toString()) : null;
       const materialIdsValue = formData.get("materialIds");
-      let materials: { id: string; name: string }[] | undefined = undefined;  
+      let materials: { id: string; name: string }[] | undefined = undefined;
 
       if (typeof materialIdsValue === "string") {
         try {
@@ -41,23 +40,17 @@ class ImageService {
         context.response.body = { error: "Image file is missing." };
         return;
       }
-
       const fileContent = new Uint8Array(await file.arrayBuffer());
-      const fileExtension = file.name.split('.').pop() || 'png';
-      const filename = `${imageName}.${fileExtension}`;
 
-      const storageDir = join(STORAGE_PATH, 'images');
-      const filePath = join(storageDir, filename);
+      const mimeType = file.type;
 
-      await Deno.mkdir(storageDir, { recursive: true });
-      await Deno.writeFile(filePath, fileContent);
-
-      // Build IImage and persist via model
       const imageId = globalThis.crypto.randomUUID();
+
       const newImage: IImage = {
         id: imageId,
-        url: `${URL}${STORAGE_PATH}images/${filename}`,
         title: imageName,
+        imageData: fileContent, 
+        mimeType: mimeType,     
         description: imageDescription || undefined,
         category: categoryId ? { id: categoryId, name: "" } : null,
         price: price,
@@ -68,12 +61,60 @@ class ImageService {
       const model = new ImageModel();
       const saved = await model.createImage(newImage);
 
+      const savedId = saved?.id ?? newImage.id;
+
+      const { ...responseBody } = newImage;
+
       context.response.status = 201;
-      context.response.body = { ...newImage, id: saved?.id ?? newImage.id } as IImage;
+      context.response.body = { ...responseBody, id: savedId };
+
     } catch (err) {
       console.error("Error during image upload:", err);
       context.response.status = 500;
       context.response.body = { error: "An internal server error occurred.", message: (err instanceof Error) ? err.message : String(err) };
+    }
+  }
+
+  public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
+    try {
+      const allImages = await ImageModel.getImages();
+
+      response.body = allImages;
+    } catch (err) {
+      console.log(err);
+      response.status = 500;
+      const errorMessage = (err instanceof Error) ? err.message : String(err);
+      response.body = { error: "Internal Server Error", message: errorMessage };
+    }
+  }
+
+  public static async getImageById({ response, params }: RouterContext<string>): Promise<void> {
+    const { imageId } = params;
+
+    if (!imageId) {
+      response.status = 400;
+      response.body = { error: "Missing imageId parameter" };
+      return;
+    }
+
+    try {
+      const image = await ImageModel.getImageById(imageId);
+
+      if (!image || !(image.image_data instanceof Uint8Array) || !image.mime_type) {
+        response.status = 404;
+        response.body = { error: "Image not found or data is incomplete" };
+        return;
+      }
+
+      response.headers.set("Content-Type", image.mime_type);
+
+      response.status = 200;
+      response.body = image.image_data;
+
+    } catch (error) {
+      console.error("Error fetching image by ID:", error);
+      response.status = 500;
+      response.body = { error: "Internal server error" };
     }
   }
 }

@@ -1,6 +1,7 @@
 export interface IImage {
   id: string;
-  url: string;
+  imageData?: Uint8Array;
+  mimeType?: string;
   title: string;
   description?: string | null;
   category?: ICategory | null;
