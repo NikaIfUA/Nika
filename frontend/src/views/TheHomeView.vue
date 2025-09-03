@@ -4,25 +4,26 @@
     <h3>Here you can find information about the developers.</h3>
   </div>
 
-  <div v-if="images.length > 0" class="image-gallery">
+  <!-- temporary image gallery -->
+  <div class="image-gallery">
     <div v-for="image in images" :key="image.id" class="image-card">
-      <img :src="mainApi.getImageUrlById(image.id)" :alt="image.title || 'NIKA project image'" />
+      <img :src="image.url" :alt="image.title || 'NIKA project image'" />
       <p v-if="image.title">{{ image.title }}</p>
     </div>
   </div>
-  </template>
+</template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import type { IImage } from '../interfaces.ts';
 import mainApi from '@/api/main.api.ts';
-import type { IImage } from '@/interfaces';
 
 const images = ref<IImage[]>([]);
 
 onMounted(async () => {
   try {
     const response = await mainApi.getAllImages();
-    images.value = Array.isArray(response.data) ? response.data : [response.data];
+    images.value = response.data;
   } catch (error) {
     console.error("Error fetching images:", error);
   }

@@ -1,7 +1,5 @@
 services:
   backend:
-    networks:
-      - nika-bridge
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -9,15 +7,12 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-      - /app/node_modules 
     env_file:
       - .env
     depends_on:
       - db
 
   frontend:
-    networks:
-      - nika-bridge
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -32,8 +27,6 @@ services:
       - /app/node_modules
 
   nginx:
-    networks:
-      - nika-bridge
     image: nginx:alpine
     ports:
       - "3000:80"
@@ -44,8 +37,6 @@ services:
       - backend
 
   db:
-    networks:
-      - nika-bridge
     image: postgres:15
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -55,7 +46,3 @@ services:
       - "5432:5432"
     env_file:
       - .env
-
-networks:
-  nika-bridge:
-    driver: bridge
