@@ -1,37 +1,20 @@
 <template>
-  <ImageUploadForm :apiUrl="API_URL" :categories="categories" :materials="materials" @uploaded="onUploaded" />
+  <div class="admin-links">
+    <h2>Admin</h2>
+    <ul>
+      <li><RouterLink to="/admin/upload-image">Upload Image</RouterLink></li>
+      <li><RouterLink to="/admin/add-category">Add Category</RouterLink></li>
+      <li><RouterLink to="/admin/add-materials">Add Materials</RouterLink></li>
+    </ul>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import ImageUploadForm from '@/components/ImageUploadForm.vue';
-import { API_URL } from '@/env';
 
-const categories = ref<Array<{ id: string; name: string }>>([]);
-const materials = ref<Array<{ id: string; name: string }>>([]);
-
-async function fetchCategories() {
-  try {
-    const res = await fetch(`${API_URL}/get-categories`);
-    if (res.ok) categories.value = await res.json();
-  } catch (e) {
-    console.error('Error fetching categories', e);
-  }
-}
-
-async function fetchMaterials() {
-  try {
-    const res = await fetch(`${API_URL}/get-materials`);
-    if (res.ok) materials.value = await res.json();
-  } catch (e) {
-    console.error('Error fetching materials', e);
-  }
-}
-
-fetchCategories();
-fetchMaterials();
-
-function onUploaded(image: any) {
-  console.log('Successfully uploaded:', image);
-}
 </script>
+
+<style scoped>
+.admin-links ul { list-style: none; padding: 0; }
+.admin-links li { margin: 6px 0; }
+.admin-quick-upload { margin-top: 20px; }
+</style>

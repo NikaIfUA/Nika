@@ -1,5 +1,6 @@
-import { table, customType } from "../dependencies.ts";
+import { pgTable as table, customType } from "drizzle-orm/pg-core";
 import * as t from "drizzle-orm/pg-core";
+import { InferSelectModel } from "drizzle-orm/";
 
 // Create a custom type BYTEA for storing images directly in PSQL
 const byteaType = customType<{ data: Uint8Array }>({
@@ -41,3 +42,26 @@ export const materials = table('materials', {
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export type TImage = InferSelectModel<typeof images>;
+
+/*
+
+// src/db/schema.ts (continued)
+import { pgTable, serial, varchar, timestamp } from 'drizzle-orm/pg-core';
+import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
+
+export const users = pgTable('users', {
+  id: serial('id').primaryKey(),
+  fullName: varchar('full_name', { length: 256 }),
+  email: varchar('email', { length: 256 }).notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Type for selecting data (all fields are non-optional)
+export type User = InferSelectModel<typeof users>;
+
+// Type for inserting data (fields with defaults or auto-increment are optional)
+export type NewUser = InferInsertModel<typeof users>;
+jtj-prvr-akg
+*/

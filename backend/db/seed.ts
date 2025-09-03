@@ -1,4 +1,4 @@
-import { drizzle } from '../dependencies.ts';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
 import { categories, images, materials, imageMaterials } from './schema.ts';

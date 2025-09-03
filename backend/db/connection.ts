@@ -1,9 +1,9 @@
-import { drizzle, type PostgresJsDatabase } from '../dependencies.ts';
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as dbSchema from './schema.ts';
-import { postgres } from '../dependencies.ts';
+import postgres from 'postgres';
 
 const cached: { db?: PostgresJsDatabase<typeof dbSchema> } = {};
-
+//TODO: Make connection persistent
 export function getDbInstance(connectionString?: string) {
   if (cached.db) return cached.db;
   else if (!connectionString) {

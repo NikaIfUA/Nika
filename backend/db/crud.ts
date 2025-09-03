@@ -1,4 +1,4 @@
-import { PostgresJsDatabase } from '../dependencies.ts';
+import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import * as schema from './schema.ts';
 import { categories, materials } from './schema.ts';
 import { getDbInstance } from './connection.ts';
