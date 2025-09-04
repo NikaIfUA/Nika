@@ -1,5 +1,6 @@
 import { API_URL } from '@/env';
 import axios, { type AxiosResponse } from 'axios';
+import type { IImage } from '@/interfaces';
 
 
 const mainApi = {
@@ -11,7 +12,7 @@ const mainApi = {
     return await axios.get(`${API_URL}/get-info`);
   },
 
-  getAllImages: async (): Promise<AxiosResponse<any[]>> => {
+  getAllImages: async (): Promise<AxiosResponse<IImage[]>> => {
     return await axios.get(`${API_URL}/get-all-images`);
   },
 

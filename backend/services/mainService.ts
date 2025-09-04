@@ -23,20 +23,6 @@ class MainService {
     }
   }
 
-  public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
-    try {
-  const db = new Database();
-  const allImages = await db.getImages();
-
-      response.body = allImages;
-    } catch (err) {
-      console.log(err);
-      response.status = 500;
-      const errorMessage = (err instanceof Error) ? err.message : String(err);
-      response.body = { error: "Internal Server Error", message: errorMessage };
-    }
-  }
-
   public static async getCategories({ response }: RouterContext<string>): Promise<void> {
     try {
       const db = new Database();
