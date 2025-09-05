@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
 import { categories, images, materials, imageMaterials } from './schema.ts';
+import { IImage, ICategory, IMaterial } from '../Interfaces.ts';
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
 console.log('Seeding started...');
@@ -39,80 +40,80 @@ async function seed() {
     }
   }
   console.log('Seeding categories...');
-  const insertedCategories = await db.insert(categories).values([
+  const categoriesSeed: ICategory[] = [
     { id: 'cat_01', name: 'Nature' },
     { id: 'cat_02', name: 'Architecture' },
     { id: 'cat_03', name: 'Animals' },
-  ]).returning();
+  ];
 
-  console.log('Seeded categories:', insertedCategories);
+  const materialsSeed: IMaterial[] = [
+    { id: 'mat_01', name: 'Cotton' },
+    { id: 'mat_02', name: 'Wood' },
+    { id: 'mat_03', name: 'Metal' },
+  ];
 
-  console.log('Seeding images...');
-  const insertedImages = await db.insert(images).values([
+  const imagesSeed: IImage[] = [
     {
       id: 'img_01',
       url: 'https://example.com/images/forest.jpg',
       title: 'Enchanted Forest',
-      category_id: insertedCategories.find(c => c.name === 'Nature')?.id, // Find the correct ID
+      category: categoriesSeed.find((c) => c.name === 'Nature') ?? null,
       price: 150,
-      amount_available: 10,
+      amountAvailable: 10,
+      materials: [materialsSeed[0]],
     },
     {
       id: 'img_02',
       url: 'https://example.com/images/architecture.jpg',
       title: 'Modern Architecture',
-      category_id: insertedCategories.find(c => c.name === 'Architecture')?.id,
+      category: categoriesSeed.find((c) => c.name === 'Architecture') ?? null,
       price: 200,
-      amount_available: 5,
+      amountAvailable: 5,
+      materials: [materialsSeed[1]],
     },
     {
       id: 'img_03',
       url: 'https://example.com/images/animals.jpg',
       title: 'Wild Animals',
-      category_id: insertedCategories.find(c => c.name === 'Animals')?.id,
+      category: categoriesSeed.find((c) => c.name === 'Animals') ?? null,
       price: 300,
-      amount_available: 8,
+      amountAvailable: 8,
+      materials: [materialsSeed[2]],
     },
-  ]).returning();
+  ];
 
-  console.log('Seeded images:', insertedImages);
+  // Insert categories
+  const insertedCategories = await db.insert(categories).values(categoriesSeed).returning();
+  console.log('Seeded categories:', insertedCategories);
 
-  console.log('Seeding materials...');
-  const insertedMaterials = await db.insert(materials).values([
-    {
-      id: 'mat_01',
-      name: 'Cotton',
-    },
-    {
-      id: 'mat_02',
-      name: 'Wood',
-    },
-    {
-      id: 'mat_03',
-      name: 'Metal',
-    },
-  ]).returning();
-
-  const insertedImageMaterials = await db.insert(imageMaterials).values([
-    {
-      id: 'img_mat_01',
-      image_id: insertedImages[0].id,
-      material_id: insertedMaterials[0].id,
-    },
-    {
-      id: 'img_mat_02',
-      image_id: insertedImages[1].id,
-      material_id: insertedMaterials[1].id,
-    },
-    {
-      id: 'img_mat_03',
-      image_id: insertedImages[2].id,
-      material_id: insertedMaterials[2].id,
-    },
-  ]).returning();
-
+  // Insert materials
+  const insertedMaterials = await db.insert(materials).values(materialsSeed).returning();
   console.log('Seeded materials:', insertedMaterials);
 
+  // Map images to DB shape
+  const imagesToInsert = imagesSeed.map((img) => ({
+    id: img.id,
+    url: img.url,
+    title: img.title,
+    description: img.description ?? null,
+    category_id: img.category?.id ?? null,
+    price: img.price ?? null,
+    amount_available: img.amountAvailable ?? null,
+  }));
+
+  const insertedImages = await db.insert(images).values(imagesToInsert).returning();
+  console.log('Seeded images:', insertedImages);
+
+  // Insert image_materials based on imagesSeed materials
+  const imageMaterialRows = [] as { id: string; image_id: string; material_id: string }[];
+  for (const img of imagesSeed) {
+    const mats = img.materials ?? [];
+    for (const m of mats) {
+      imageMaterialRows.push({ id: globalThis.crypto.randomUUID(), image_id: img.id, material_id: m.id });
+    }
+  }
+
+  const insertedImageMaterials = imageMaterialRows.length ? await db.insert(imageMaterials).values(imageMaterialRows).returning() : [];
   console.log('Seeded image materials:', insertedImageMaterials);
 
   console.log('Seeding finished successfully!');

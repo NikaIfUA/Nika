@@ -7,23 +7,43 @@
   <!-- temporary image gallery -->
   <div class="image-gallery">
     <div v-for="image in images" :key="image.id" class="image-card">
-      <img :src="image.url" :alt="image.title || 'NIKA project image'" />
+      <img :src="blobUrls[image.id] || image.url" :alt="image.title || 'NIKA project image'" />
       <p v-if="image.title">{{ image.title }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, reactive } from 'vue';
 import type { IImage } from '../interfaces.ts';
 import mainApi from '@/api/main.api.ts';
 
 const images = ref<IImage[]>([]);
+const blobUrls = reactive<Record<string, string>>({});
+
+// helper to create blob url from ArrayBuffer
+async function arrayBufferToObjectUrl(buffer: ArrayBuffer, mime = 'image/*') {
+  const uint8 = new Uint8Array(buffer);
+  const blob = new Blob([uint8], { type: mime });
+  return URL.createObjectURL(blob);
+}
 
 onMounted(async () => {
   try {
     const response = await mainApi.getAllImages();
     images.value = response.data;
+
+    // For each image, fetch binary data by DB id and create a blob URL.
+    for (const img of images.value) {
+      try {
+        const binResp = await mainApi.getImageById(img.id);
+        const contentType = binResp.headers?.['content-type'] || 'image/*';
+        const blobUrl = await arrayBufferToObjectUrl(binResp.data as ArrayBuffer, contentType);
+        blobUrls[img.id] = blobUrl;
+      } catch (e) {
+        console.warn('Failed to fetch image binary for', img.id, e);
+      }
+    }
   } catch (error) {
     console.error("Error fetching images:", error);
   }

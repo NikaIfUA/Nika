@@ -11,6 +11,8 @@ services:
       - .env
     depends_on:
       - db
+    networks:
+      - nika-network
 
   frontend:
     build:
@@ -25,6 +27,8 @@ services:
       - ./frontend/vite.config.ts:/app/vite.config.ts
       - ./frontend/package.json:/app/package.json
       - /app/node_modules
+    networks:
+      - nika-network
 
   nginx:
     image: nginx:alpine
@@ -35,6 +39,8 @@ services:
     depends_on:
       - frontend
       - backend
+    networks:
+      - nika-network
 
   db:
     image: postgres:15
@@ -46,3 +52,9 @@ services:
       - "5432:5432"
     env_file:
       - .env
+    networks:
+      - nika-network
+
+networks:
+  nika-network:
+    driver: bridge
