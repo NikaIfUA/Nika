@@ -49,7 +49,25 @@ class ImageService {
       const db = new Database();
       const allImages = await db.getImages();
 
-      response.body = allImages;
+      const enhanced = await Promise.all(allImages.map(async (img) => {
+        try {
+          if (img.url && img.url.startsWith(STORAGE_PATH)) {
+            const parts = img.url.split('/');
+            const fileName = parts.pop() ?? '';
+            const filePath = join(STORAGE_PATH, 'images', fileName);
+            const fileBytes = await Deno.readFile(filePath);
+            const ext = fileName.split('.').pop() ?? '';
+            const mime = ImageService.getMimeType(ext);
+            const base64 = btoa(String.fromCharCode(...fileBytes));
+            return { ...img, dataUrl: `data:${mime};base64,${base64}` };
+          }
+        } catch (e) {
+          console.error('attach dataUrl error for image', img.id, e);
+        }
+        return img;
+      }));
+
+      response.body = enhanced;
     } catch (err) {
       console.log(err);
       response.status = 500;
