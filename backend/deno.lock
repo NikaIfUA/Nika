@@ -1,7 +1,6 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:drizzle-kit@*": "0.31.4_esbuild@0.25.9",
     "npm:drizzle-kit@~0.31.4": "0.31.4_esbuild@0.25.9",
     "npm:drizzle-orm@~0.44.3": "0.44.4_postgres@3.4.7",
     "npm:postgres@^3.4.4": "3.4.7"
@@ -284,6 +283,15 @@
         "esbuild-register"
       ],
       "bin": true
+    },
+    "drizzle-orm@0.31.4_postgres@3.4.7": {
+      "integrity": "sha512-VGD9SH9aStF2z4QOTnVlVX/WghV/EnuEzTmsH3fSVp2E4fFgc8jl3viQrS/XUJx1ekW4rVVLJMH42SfGQdjX3Q==",
+      "dependencies": [
+        "postgres"
+      ],
+      "optionalPeers": [
+        "postgres"
+      ]
     },
     "drizzle-orm@0.44.4_postgres@3.4.7": {
       "integrity": "sha512-ZyzKFpTC/Ut3fIqc2c0dPZ6nhchQXriTsqTNs4ayRgl6sZcFlMs9QZKPSHXK4bdOf41GHGWf+FrpcDDYwW+W6Q==",

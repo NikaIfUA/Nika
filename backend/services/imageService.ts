@@ -1,58 +1,21 @@
 import { RouterContext } from "../dependencies.ts";
-import { STORAGE_PATH, URL } from "../env.ts";
+import { STORAGE_PATH } from "../env.ts";
 import { IImage } from "../Interfaces.ts";
 import { Database } from "../db/crud.ts";
 import { join } from "../dependencies.ts";
 
 class ImageService {
-  private static async saveImage(
-    fileContent: Uint8Array,
-    originalFilename: string,
-    imageName: string,
-    imageDescription: string,
-    categoryId: string | null,
-    price: number | null,
-    amountAvailable: number | null,
-    materialsIds: string[] | null
-  ): Promise<IImage> {
-    const fileExtension = originalFilename.split('.').pop();
-    const filename = `${imageName}.${fileExtension}`;
-
-    const storageDir = join(STORAGE_PATH, 'images');
-    const filePath = join(storageDir, filename);
-
-    await Deno.mkdir(storageDir, { recursive: true });
-
-    await Deno.writeFile(filePath, fileContent);
-    console.log(`Image saved to ${filePath}`);
-
-    const newImage: IImage = {
-      id: "temp-id",
-      url: `${URL}${STORAGE_PATH}images/${filename}`,
-      title: imageName,
-      description: imageDescription,
-      category: categoryId ? { id: categoryId, name: "" } : null,
-      price: price !== null ? price : undefined,
-      amountAvailable: amountAvailable !== null ? amountAvailable : undefined,
-      materials: materialsIds && materialsIds.length
-        ? materialsIds.map((id) => ({ id, name: "" }))
-        : undefined
-    };
-
-    // Persist to DB
+  public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
       const db = new Database();
-      const saved = await db.createImage(newImage);
+      const allImages = await db.getImages();
 
-      // Return the saved DB row (with DB-generated values) merged with our in-memory newImage
-      return {
-        ...newImage,
-        id: saved?.id ?? newImage.id,
-      } as IImage;
+      response.body = allImages;
     } catch (err) {
-      console.error('Failed to save image metadata to DB:', err);
-      // Fallback to returning the metadata object even if DB save failed
-      return newImage;
+      console.log(err);
+      response.status = 500;
+      const errorMessage = (err instanceof Error) ? err.message : String(err);
+      response.body = { error: "Internal Server Error", message: errorMessage };
     }
   }
 
@@ -96,19 +59,47 @@ class ImageService {
       }
 
       const fileContent = new Uint8Array(await file.arrayBuffer());
-      const newImage = await ImageService.saveImage(
-        fileContent,
-        file.name,
-        imageName,
-        imageDescription,
-        categoryId,
-        price,
-        amountAvailable,
-        materials
-      );
+      
+      const fileExtension = file.name.split('.').pop();
+      const filename = `${imageName}.${fileExtension}`;
+
+      const storageDir = join(STORAGE_PATH, 'images');
+      const filePath = join(storageDir, filename);
+
+      await Deno.mkdir(storageDir, { recursive: true });
+
+      await Deno.writeFile(filePath, fileContent);
+      console.log(`Image saved to ${filePath}`);
+
+      const newImage: IImage = {
+        id: globalThis.crypto.randomUUID(),
+        url: `${STORAGE_PATH}images/${filename}`,
+        title: imageName,
+        description: imageDescription,
+        category: categoryId ? { id: categoryId, name: "" } : null,
+        price: price !== null ? price : undefined,
+        amountAvailable: amountAvailable !== null ? amountAvailable : undefined,
+        materials: materials && materials.length
+          ? materials.map((id) => ({ id, name: "" }))
+          : undefined
+      };
+
+      let savedImage: IImage;
+      try {
+        const db = new Database();
+        const saved = await db.createImage(newImage);
+
+        savedImage = {
+          ...newImage,
+          id: saved?.id ?? newImage.id,
+        } as IImage;
+      } catch (err) {
+        console.error('Failed to save image metadata to DB:', err);
+        savedImage = newImage;
+      }
 
       context.response.status = 201;
-      context.response.body = newImage;
+      context.response.body = savedImage;
 
     } catch (error) {
       console.error("Error during image upload:", error);
