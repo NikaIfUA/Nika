@@ -52,10 +52,10 @@ export class Database {
         id: imageId,
         url,
         title,
-        description: description ?? null,
-        category_id: categoryId ?? null,
-        price: price ?? null,
-        amount_available: amountAvailable ?? null,
+        description: description,
+        category_id: categoryId,
+        price: price,
+        amount_available: amountAvailable,
         ...rest,
       }).returning();
 
