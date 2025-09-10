@@ -143,4 +143,12 @@ export class Database {
       return img;
     });
   }
+
+  async createCategory(data: { id: string; name: string }) {
+    return await this.db.insert(categories).values(data).returning().then((res) => res[0]);
+  }
+
+  async createMaterial(data: { id: string; name: string }) {
+    return await this.db.insert(materials).values(data).returning().then((res) => res[0]);
+  }
 }
