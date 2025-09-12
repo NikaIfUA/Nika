@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
 import { categories, images, materials, imageMaterials } from './schema.ts';
-import { IImage, ICategory, IMaterial } from '../Interfaces.ts';
+import { ICategory, IMaterial } from '../Interfaces.ts';
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
 console.log('Seeding started...');
@@ -52,35 +52,6 @@ async function seed() {
     { id: 'mat_03', name: 'Metal' },
   ];
 
-  const imagesSeed: IImage[] = [
-    {
-      id: 'img_01',
-      url: 'https://example.com/images/forest.jpg',
-      title: 'Enchanted Forest',
-      category: categoriesSeed.find((c) => c.name === 'Nature') ?? null,
-      price: 150,
-      amountAvailable: 10,
-      materials: [materialsSeed[0]],
-    },
-    {
-      id: 'img_02',
-      url: 'https://example.com/images/architecture.jpg',
-      title: 'Modern Architecture',
-      category: categoriesSeed.find((c) => c.name === 'Architecture') ?? null,
-      price: 200,
-      amountAvailable: 5,
-      materials: [materialsSeed[1]],
-    },
-    {
-      id: 'img_03',
-      url: 'https://example.com/images/animals.jpg',
-      title: 'Wild Animals',
-      category: categoriesSeed.find((c) => c.name === 'Animals') ?? null,
-      price: 300,
-      amountAvailable: 8,
-      materials: [materialsSeed[2]],
-    },
-  ];
 
   // Insert categories
   const insertedCategories = await db.insert(categories).values(categoriesSeed).returning();
@@ -90,31 +61,7 @@ async function seed() {
   const insertedMaterials = await db.insert(materials).values(materialsSeed).returning();
   console.log('Seeded materials:', insertedMaterials);
 
-  // Map images to DB shape
-  const imagesToInsert = imagesSeed.map((img) => ({
-    id: img.id,
-    url: img.url,
-    title: img.title,
-    description: img.description ?? null,
-    category_id: img.category?.id ?? null,
-    price: img.price ?? null,
-    amount_available: img.amountAvailable ?? null,
-  }));
 
-  const insertedImages = await db.insert(images).values(imagesToInsert).returning();
-  console.log('Seeded images:', insertedImages);
-
-  // Insert image_materials based on imagesSeed materials
-  const imageMaterialRows = [] as { id: string; image_id: string; material_id: string }[];
-  for (const img of imagesSeed) {
-    const mats = img.materials ?? [];
-    for (const m of mats) {
-      imageMaterialRows.push({ id: globalThis.crypto.randomUUID(), image_id: img.id, material_id: m.id });
-    }
-  }
-
-  const insertedImageMaterials = imageMaterialRows.length ? await db.insert(imageMaterials).values(imageMaterialRows).returning() : [];
-  console.log('Seeded image materials:', insertedImageMaterials);
 
   console.log('Seeding finished successfully!');
 }

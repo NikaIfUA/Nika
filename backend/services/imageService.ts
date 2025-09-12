@@ -34,7 +34,7 @@ class ImageService {
       const fileBytes = await Deno.readFile(filePath);
 
       const ext = fileName.split('.').pop() ?? '';
-      const mime =  this.getMimeType(ext);
+      const mime = ImageService.getMimeType(ext);
       response.headers.set('Content-Type', mime);
       response.body = fileBytes;
     } catch (err) {
@@ -43,36 +43,34 @@ class ImageService {
       response.body = { error: 'Unable to read image' };
     }
   }
-
   public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
       const db = new Database();
       const allImages = await db.getImages();
 
-      const enhanced = await Promise.all(allImages.map(async (img) => {
-        try {
-          if (img.url && img.url.startsWith(STORAGE_PATH)) {
-            const parts = img.url.split('/');
-            const fileName = parts.pop() ?? '';
-            const filePath = join(STORAGE_PATH, 'images', fileName);
-            const fileBytes = await Deno.readFile(filePath);
-            const ext = fileName.split('.').pop() ?? '';
-            const mime = ImageService.getMimeType(ext);
-            const base64 = btoa(String.fromCharCode(...fileBytes));
-            return { ...img, dataUrl: `data:${mime};base64,${base64}` };
-          }
-        } catch (e) {
-          console.error('attach dataUrl error for image', img.id, e);
-        }
-        return img;
-      }));
+      // Read all image files and collect them in an array
+      const imagesData: Array<IImage & { fileName: string; mimeType: string; data: Uint8Array }> = [];
+      for (const img of allImages) {
+        const parts = img.url.split('/');
+        const fileName = parts.pop() ?? '';
+        const filePath = join(STORAGE_PATH, 'images', fileName);
+        const fileBytes = await Deno.readFile(filePath);
+        const ext = fileName.split('.').pop() ?? '';
+        const mime = ImageService.getMimeType(ext);
+        imagesData.push({
+          ...img,
+          fileName,
+          mimeType: mime,
+          data: fileBytes
+        });
+      }
 
-      response.body = enhanced;
+      response.headers.set('Content-Type', 'application/json');
+      response.body = imagesData;
     } catch (err) {
-      console.log(err);
+      console.error("Failed to get images metadata:", err);
       response.status = 500;
-      const errorMessage = (err instanceof Error) ? err.message : String(err);
-      response.body = { error: "Internal Server Error", message: errorMessage };
+      response.body = { error: "Could not retrieve image list" };
     }
   }
 

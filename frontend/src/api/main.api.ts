@@ -16,8 +16,8 @@ const mainApi = {
     return await axios.get(`${API_URL}/get-all-images`);
   },
 
-  getImageById: async (id: string): Promise<AxiosResponse<ArrayBuffer>> => {
-    return await axios.get(`${API_URL}/get-image-by-id/${id}`, { responseType: 'arraybuffer' });
+  getImageById: async (id: string): Promise<AxiosResponse<Blob>> => {
+    return await axios.get(`${API_URL}/get-image-by-id/${id}`, { responseType: 'blob' });
   },
 
   getAllCategories: async (): Promise<AxiosResponse<any[]>> => {

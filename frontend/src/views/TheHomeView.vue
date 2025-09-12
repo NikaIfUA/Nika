@@ -6,13 +6,13 @@
 
   <!-- temporary image gallery -->
   <div class="image-gallery">
-    <div v-for="image in images" :key="image.id" class="image-card" @click="openImage(image)">
-      <img :src="blobUrls[image.id] || image.url" :alt="image.title || 'NIKA project image'" />
-      <p v-if="image.title">{{ image.title }}</p>
-    </div>
+      <div v-for="image in images" :key="image.id" class="image-card" @click="openImage(image)">
+        <img :src="imageUrls[image.id]" :alt="image.title || 'NIKA project image'" />
+        <p v-if="image.title">{{ image.title }}</p>
+      </div>
   </div>
 
-  <ImageDetailsModal v-if="selectedImage" :image="selectedImage" :imageUrl="blobUrls[selectedImage.id]" @close="selectedImage = null" />
+  <ImageDetailsModal v-if="selectedImage" :image="selectedImage" :imageUrl="imageUrls[selectedImage.id]" @close="selectedImage = null" />
 </template>
 
 <script setup lang="ts">
@@ -21,19 +21,21 @@ import type { IImage } from '../interfaces.ts';
 import mainApi from '@/api/main.api.ts';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
 
-const images = ref<IImage[]>([]);
-const blobUrls = reactive<Record<string, string>>({});
+const images = ref<(IImage & { data: Record<string, number>; mimeType: string })[]>([]);
 const selectedImage = ref<IImage | null>(null);
+const imageUrls = reactive<Record<string, string>>({});
 
 onMounted(async () => {
   try {
     const response = await mainApi.getAllImages();
-    images.value = response.data;
+    images.value = response.data as (IImage & { data: Record<string, number>; mimeType: string })[];
+
     for (const img of images.value) {
-      if ((img as any).dataUrl) {
-        blobUrls[img.id] = (img as any).dataUrl;
-      }
+      const imageBytes = new Uint8Array(Object.values(img.data));
+      const blob = new Blob([imageBytes], { type: img.mimeType });
+      imageUrls[img.id] = URL.createObjectURL(blob);
     }
+
   } catch (error) {
     console.error("Error fetching images:", error);
   }
