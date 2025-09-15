@@ -30,8 +30,7 @@ class ImageService {
 
       const parts = image.url.split('/');
       const fileName = parts.pop() ?? '';
-      const filePath = join(STORAGE_PATH, 'images', fileName);
-      const fileBytes = await Deno.readFile(filePath);
+      const fileBytes = await Deno.readFile(image.url);
 
       const ext = fileName.split('.').pop() ?? '';
       const mime = ImageService.getMimeType(ext);
@@ -43,6 +42,7 @@ class ImageService {
       response.body = { error: 'Unable to read image' };
     }
   }
+
   public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
       const db = new Database();
