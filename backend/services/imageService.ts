@@ -1,6 +1,6 @@
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH } from "../env.ts";
-import { IImage } from "../Interfaces.ts";
+import { IImage } from "../interfaces.ts";
 import { Database } from "../db/crud.ts";
 import { join } from "../dependencies.ts";
 

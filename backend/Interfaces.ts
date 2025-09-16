@@ -19,3 +19,10 @@ export interface IMaterial {
   name: string;
   description?: string;
 }
+
+export interface IUser {
+  id: string;
+  username: string;
+  email: string;
+  passwordHash: string;
+}

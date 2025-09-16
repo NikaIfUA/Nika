@@ -6,6 +6,7 @@
       <RouterLink to="/about">About</RouterLink>
       <RouterLink to="/info">Info</RouterLink>
       <RouterLink to="/admin">Admin</RouterLink>
+      <RouterLink to="/auth">Login / Register</RouterLink>
     </nav>
   </header>
 </template>

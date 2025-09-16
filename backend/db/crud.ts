@@ -1,8 +1,8 @@
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, inArray } from 'drizzle-orm/';
 import * as schema from './schema.ts'; // Import all schemas
-import { categories, images, materials, imageMaterials } from './schema.ts';
-import { IImage } from '../Interfaces.ts';
+import { categories, images, materials, imageMaterials, users} from './schema.ts';
+import { IImage } from '../interfaces.ts';
 import { getDbInstance } from './connection.ts';
 
 export class Database {
@@ -61,6 +61,25 @@ export class Database {
 
   async getMaterials() {
     return await this.db.select().from(materials);
+  }
+
+  async findUserByEmail(email: string) {
+    const rows = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
+    return rows[0] ?? null;
+  }
+
+  async createUser(data: { name: string; email: string; passwordHash: string }) {
+    const userId = globalThis.crypto.randomUUID();
+    const { name, email, passwordHash } = data;
+
+    await this.db.insert(users).values({
+      id: userId,
+      name,
+      email,
+      password: passwordHash,
+    }).returning();
+
+    return userId;
   }
 
   async createImage(data: IImage) {
