@@ -1,66 +1,79 @@
-import { IUser } from '../interfaces.ts';
 import { RouterContext } from '../dependencies.ts';
 import { Database } from '../db/crud.ts';
-import * as bcrypt from 'https://deno.land/x/bcrypt@v0.4.1/mod.ts';
+import { bcrypt } from '../dependencies.ts';
 
 class UserService {
   public static async register(ctx: RouterContext<string>) {
     try {
       const db = new Database();
-      const body = await ctx.request.body({ type: 'json' }).value;
-      const { username, email, password } = body;
+      const body = ctx.request.body;
 
-      if (!username || !email || !password) {
+      const jsonData = await body.json();
+      console.log('Register payload received:', jsonData);
+
+      const nameRaw = jsonData.name ?? jsonData.username;
+      const name = typeof nameRaw === 'string' ? nameRaw.trim() : undefined;
+      const emailRaw = jsonData.email;
+      const email = typeof emailRaw === 'string' ? emailRaw.trim() : undefined;
+      const passwordEntry = jsonData.password;
+      const password = typeof passwordEntry === 'string' ? passwordEntry : undefined;
+      if (!name || !email || !password) {
         ctx.response.status = 400; // Bad Request
-        ctx.response.body = { message: 'Username, email, and password are required.' };
+        ctx.response.body = { message: 'Name, email, and password are required.' };
         return;
       }
 
-      const existingUser = await db.findUserByEmail(email);
+      const existingUser = await db.findUserByEmail(email as string);
       if (existingUser) {
         ctx.response.status = 409;
         ctx.response.body = { message: 'A user with this email already exists.' };
         return;
       }
 
-      const passwordHash = await bcrypt.hash(password);
+      const passwordHash = await bcrypt.hash(password); //TODO: add salt
       const newUser = await db.createUser({
-        id: crypto.randomUUID(),
-        username,
+        name,
         email,
         passwordHash,
       });
 
       ctx.response.status = 201; // Created
-      ctx.response.body = { message: 'User registered successfully!', userId: newUser.id };
-    } catch (error) {
-      console.error('Registration error:', error);
-      ctx.response.status = 500;
-      ctx.response.body = { message: 'An unexpected error occurred during registration.' };
-    }
-  }
-  
-  async login(credentials: IUser): Promise<{ success: boolean; token?: string; userName?: string; error?: string }> {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        return {
-          success: true,
-          token: data.token,
-          userName: data.userName,
-        };
-      } else {
-        return { success: false, error: data.message || 'Помилка входу' };
+      ctx.response.body = { message: 'User registered successfully!', newUser };
+      } catch (error) {
+        console.error('Registration error:', error);
+        ctx.response.status = 500;
+        ctx.response.body = { message: 'An unexpected error occurred during registration.' };
       }
+    }
+
+  public static async login(ctx: RouterContext<string>): Promise<{ success: boolean; token?: string; userName?: string; error?: string }> {
+    try {
+      const db = new Database();
+      const body = ctx.request.body;
+
+      const jsonData = await body.json();
+      console.log('Login payload received:', jsonData);
+
+      const emailRaw = jsonData.email;
+      const email = typeof emailRaw === 'string' ? emailRaw.trim() : undefined;
+      const passwordEntry = jsonData.password;
+      const password = typeof passwordEntry === 'string' ? passwordEntry : undefined;
+
+
+      const user = await db.findUserByEmail(email);
+      if (!user) {
+        ctx.response.status = 401;
+        return { success: false, error: 'Invalid email or password.' };
+      }
+      const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+      if (!passwordMatches) {
+        ctx.response.status = 401;
+        return { success: false, error: 'Invalid email or password.' };
+      }
+      ctx.response.status = 200;
+      ctx.response.body = { success: true, token: 'some-jwt-token', userName: user.name };
+      return { success: true, token: 'some-jwt-token', userName: user.name };
+
     } catch (error) {
       console.error('Login failed:', error);
       return { success: false, error: 'Не вдалося підключитися до сервера.' };

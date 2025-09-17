@@ -2,7 +2,7 @@ import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { eq, inArray } from 'drizzle-orm/';
 import * as schema from './schema.ts'; // Import all schemas
 import { categories, images, materials, imageMaterials, users} from './schema.ts';
-import { IImage } from '../interfaces.ts';
+import type { IImage, IUser } from '../interfaces.ts';
 import { getDbInstance } from './connection.ts';
 
 export class Database {
@@ -63,9 +63,12 @@ export class Database {
     return await this.db.select().from(materials);
   }
 
-  async findUserByEmail(email: string) {
+  async findUserByEmail(email: string): Promise<IUser | null> {
     const rows = await this.db.select().from(users).where(eq(users.email, email)).limit(1);
-    return rows[0] ?? null;
+    const row = rows[0];
+    if (!row) return null;
+
+    return row as unknown as IUser;
   }
 
   async createUser(data: { name: string; email: string; passwordHash: string }) {
@@ -76,7 +79,7 @@ export class Database {
       id: userId,
       name,
       email,
-      password: passwordHash,
+      passwordHash,
     }).returning();
 
     return userId;
