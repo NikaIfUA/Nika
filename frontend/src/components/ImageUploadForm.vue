@@ -1,6 +1,6 @@
 <template>
   <div class="image-upload-form">
-    <input type="file" @change="onFileChanged" accept="image/*" />
+    <BaseInput type="file" @change="onFileChanged" accept="image/*" />
     <BaseButton :disabled="uploading" @click="uploadImage">{{ uploading ? 'Uploading...' : 'Upload' }}</BaseButton>
     <BaseInput type="text" v-model="imageName" placeholder="Enter image name" />
     <BaseInput type="text" v-model="imageDescription" placeholder="Enter image description" />
@@ -23,23 +23,48 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRefs } from 'vue';
+import { ref, onMounted } from 'vue';
+import { API_URL } from '@/env';
 import type { IImage } from '@/interfaces';
 import BaseInput from '@/components/BaseInput.vue';
 import BaseSelectBox from './BaseSelectBox.vue';
 import BaseButton from './BaseButton.vue';
 
 const props = defineProps<{
-  apiUrl: string;
-  categories: Array<{ id: string; name: string }>;
-  materials: Array<{ id: string; name: string }>;
+  apiUrl?: string;
 }>();
+
+const apiUrl = props.apiUrl ?? API_URL;
 
 const emit = defineEmits<{
   (e: 'uploaded', payload: IImage): void;
 }>();
 
-const { categories, materials } = toRefs(props as any);
+const categories = ref<Array<{ id: string; name: string }>>([]);
+const materials = ref<Array<{ id: string; name: string }>>([]);
+
+async function fetchCategories() {
+  try {
+  const res = await fetch(`${apiUrl}/get-categories`);
+    if (res.ok) categories.value = await res.json();
+  } catch (e) {
+    console.error('Error fetching categories', e);
+  }
+}
+
+async function fetchMaterials() {
+  try {
+  const res = await fetch(`${apiUrl}/get-materials`);
+    if (res.ok) materials.value = await res.json();
+  } catch (e) {
+    console.error('Error fetching materials', e);
+  }
+}
+
+onMounted(() => {
+  fetchCategories();
+  fetchMaterials();
+});
 
 const selectedFile = ref<File | null>(null);
 const imageName = ref<string>('');
@@ -79,7 +104,7 @@ async function uploadImage() {
     formData.append('amountAvailable', imageAmountAvailable.value);
     formData.append('materialIds', JSON.stringify(imageMaterialIds.value));
 
-    const response = await fetch(`${props.apiUrl}/save-image`, {
+  const response = await fetch(`${apiUrl}/save-image`, {
       method: 'POST',
       body: formData,
     });

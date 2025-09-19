@@ -16,6 +16,25 @@ class ImageService {
     }
   }
 
+  private static async readImageFile(fileUrl: string) {
+    const parts = fileUrl.split('/');
+    const fileName = parts.pop() ?? '';
+    const filePath = fileUrl.startsWith(STORAGE_PATH)
+      ? fileUrl
+      : join(STORAGE_PATH, 'images', fileName);
+
+    const fileBytes = await Deno.readFile(filePath);
+    const ext = fileName.split('.').pop() ?? '';
+    const mime = ImageService.getMimeType(ext);
+
+    return { fileName, filePath, fileBytes, mime } as {
+      fileName: string;
+      filePath: string;
+      fileBytes: Uint8Array;
+      mime: string;
+    };
+  }
+
   public static async fetchImageById({ response, params }: RouterContext<string>): Promise<void> {
     try {
       const id = params.id;
@@ -28,12 +47,7 @@ class ImageService {
         return;
       }
 
-      const parts = image.url.split('/');
-      const fileName = parts.pop() ?? '';
-      const fileBytes = await Deno.readFile(image.url);
-
-      const ext = fileName.split('.').pop() ?? '';
-      const mime = ImageService.getMimeType(ext);
+      const { fileBytes, mime } = await ImageService.readImageFile(image.url);
       response.headers.set('Content-Type', mime);
       response.body = fileBytes;
     } catch (err) {
@@ -51,12 +65,7 @@ class ImageService {
       // Read all image files and collect them in an array
       const imagesData: Array<IImage & { fileName: string; mimeType: string; data: Uint8Array }> = [];
       for (const img of allImages) {
-        const parts = img.url.split('/');
-        const fileName = parts.pop() ?? '';
-        const filePath = join(STORAGE_PATH, 'images', fileName);
-        const fileBytes = await Deno.readFile(filePath);
-        const ext = fileName.split('.').pop() ?? '';
-        const mime = ImageService.getMimeType(ext);
+        const { fileName, fileBytes, mime } = await ImageService.readImageFile(img.url);
         imagesData.push({
           ...img,
           fileName,
