@@ -28,7 +28,7 @@ const handleLogin = async (credentials) => {
   try {
     await auth.login(credentials)
     // on success, redirect to admin or home
-    router.push({ name: 'TheAdminView' }).catch(() => {})
+    router.push({ name: 'admin' }).catch(() => {})
   } catch (err) {
     console.error('Login error:', err)
   } finally {
@@ -40,7 +40,7 @@ const handleRegister = async (userInfo) => {
   loading.value = true
   try {
     await auth.register(userInfo)
-    router.push({ name: 'TheAdminView' }).catch(() => {})
+    router.push({ name: 'auth' }).catch(() => {})
   } catch (err) {
     console.error('Registration error:', err)
   } finally {

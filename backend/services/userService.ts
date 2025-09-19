@@ -1,6 +1,7 @@
 import { RouterContext } from '../dependencies.ts';
 import { Database } from '../db/crud.ts';
 import { bcrypt } from '../dependencies.ts';
+import { generateToken } from "../util/jwt.ts";
 
 class UserService {
   public static async register(ctx: RouterContext<string>) {
@@ -30,7 +31,11 @@ class UserService {
         return;
       }
 
-      const passwordHash = await bcrypt.hash(password); //TODO: add salt
+      const saltRoundsString = Deno.env.get("saltRounds") || "10";
+      const saltRounds = parseInt(saltRoundsString);
+      const salt = await bcrypt.genSalt(saltRounds);
+      console.log('Using static salt:', salt);
+      const passwordHash = await bcrypt.hash(password, salt);
       const newUser = await db.createUser({
         name,
         email,
@@ -46,37 +51,55 @@ class UserService {
       }
     }
 
-  public static async login(ctx: RouterContext<string>): Promise<{ success: boolean; token?: string; userName?: string; error?: string }> {
+  public static async login(ctx: RouterContext<string>) {
     try {
       const db = new Database();
       const body = ctx.request.body;
-
       const jsonData = await body.json();
-      console.log('Login payload received:', jsonData);
 
-      const emailRaw = jsonData.email;
-      const email = typeof emailRaw === 'string' ? emailRaw.trim() : undefined;
-      const passwordEntry = jsonData.password;
-      const password = typeof passwordEntry === 'string' ? passwordEntry : undefined;
+      const email = jsonData.email?.trim();
+      const password = jsonData.password;
 
-
-      const user = await db.findUserByEmail(email);
-      if (!user) {
-        ctx.response.status = 401;
-        return { success: false, error: 'Invalid email or password.' };
+      if (!email || !password) {
+        ctx.response.status = 400;
+        ctx.response.body = { message: 'Email and password are required.' };
+        return;
       }
-      const passwordMatches = await bcrypt.compare(password, user.passwordHash);
+
+      const userFromDb = await db.findUserByEmail(email);
+
+      if (!userFromDb) {
+        ctx.response.status = 401; // Unauthorized
+        ctx.response.body = { message: 'Invalid email or password.' };
+        return;
+      }
+
+      const passwordMatches = userFromDb ? await bcrypt.compare(password, userFromDb.passwordHash) : false;
+
       if (!passwordMatches) {
-        ctx.response.status = 401;
-        return { success: false, error: 'Invalid email or password.' };
+        ctx.response.status = 401; // Unauthorized
+        ctx.response.body = { message: 'Invalid email or password.' };
+        return;
       }
-      ctx.response.status = 200;
-      ctx.response.body = { success: true, token: 'some-jwt-token', userName: user.name };
-      return { success: true, token: 'some-jwt-token', userName: user.name };
+
+      const userResponse = {
+        id: userFromDb.id,
+        name: userFromDb.name,
+        email: userFromDb.email, 
+      };
+
+      ctx.response.status = 200; // OK
+      const token = await generateToken(userFromDb);
+      ctx.response.body = {
+        message: 'Login successful!',
+        token,
+        user: userResponse,
+      };
 
     } catch (error) {
       console.error('Login failed:', error);
-      return { success: false, error: 'Не вдалося підключитися до сервера.' };
+      ctx.response.status = 500;
+      ctx.response.body = { message: 'An internal server error occurred.' };
     }
   }
 
