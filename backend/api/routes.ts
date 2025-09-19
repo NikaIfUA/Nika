@@ -20,6 +20,5 @@ router.post(`/${API_PREFIX}save-material`, MaterialService.saveMaterial);
 router.post(`/${API_PREFIX}save-image`, ImageService.uploadHandler);
 router.post(`/${API_PREFIX}auth/register`, UserService.register);
 router.post(`/${API_PREFIX}auth/login`, UserService.login);
-router.post(`/${API_PREFIX}auth/logout`, UserService.logout);
 
 export default router;
