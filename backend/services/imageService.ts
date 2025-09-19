@@ -5,17 +5,72 @@ import { Database } from "../db/crud.ts";
 import { join } from "../dependencies.ts";
 
 class ImageService {
+  private static getMimeType(ext: string) {
+    switch (ext) {
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/jpeg';
+    }
+  }
+
+  public static async fetchImageById({ response, params }: RouterContext<string>): Promise<void> {
+    try {
+      const id = params.id;
+
+      const db = new Database();
+      const image = await db.getImageById(id);
+      if (!image) {
+        response.status = 404;
+        response.body = { error: 'Image metadata not found' };
+        return;
+      }
+
+      const parts = image.url.split('/');
+      const fileName = parts.pop() ?? '';
+      const fileBytes = await Deno.readFile(image.url);
+
+      const ext = fileName.split('.').pop() ?? '';
+      const mime = ImageService.getMimeType(ext);
+      response.headers.set('Content-Type', mime);
+      response.body = fileBytes;
+    } catch (err) {
+      console.error('fetchImageById error:', err);
+      response.status = 500;
+      response.body = { error: 'Unable to read image' };
+    }
+  }
+
   public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
       const db = new Database();
       const allImages = await db.getImages();
 
-      response.body = allImages;
+      // Read all image files and collect them in an array
+      const imagesData: Array<IImage & { fileName: string; mimeType: string; data: Uint8Array }> = [];
+      for (const img of allImages) {
+        const parts = img.url.split('/');
+        const fileName = parts.pop() ?? '';
+        const filePath = join(STORAGE_PATH, 'images', fileName);
+        const fileBytes = await Deno.readFile(filePath);
+        const ext = fileName.split('.').pop() ?? '';
+        const mime = ImageService.getMimeType(ext);
+        imagesData.push({
+          ...img,
+          fileName,
+          mimeType: mime,
+          data: fileBytes
+        });
+      }
+
+      response.headers.set('Content-Type', 'application/json');
+      response.body = imagesData;
     } catch (err) {
-      console.log(err);
+      console.error("Failed to get images metadata:", err);
       response.status = 500;
-      const errorMessage = (err instanceof Error) ? err.message : String(err);
-      response.body = { error: "Internal Server Error", message: errorMessage };
+      response.body = { error: "Could not retrieve image list" };
     }
   }
 

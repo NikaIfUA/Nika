@@ -18,8 +18,35 @@ export class Database {
   }
 
   async getImageById(id: string) {
-    const result = await this.db.select().from(images).where(eq(images.id, id));
-    return result[0];
+    const rows = await this.db.select().from(images).where(eq(images.id, id)).limit(1);
+    const row = rows[0];
+    if (!row) return undefined;
+
+    // Fetch category if present
+    const categoryRows = row.category_id
+      ? await this.db.select().from(categories).where(eq(categories.id, row.category_id)).limit(1)
+      : [];
+    const category = categoryRows[0] ?? null;
+
+    // Fetch material IDs from the join table, then load materials
+    const imageMaterialRows = await this.db.select().from(imageMaterials).where(eq(imageMaterials.image_id, id));
+    const materialIds = imageMaterialRows.map((r) => r.material_id).filter(Boolean);
+    const materialRows = materialIds.length
+      ? await this.db.select().from(materials).where(inArray(materials.id, materialIds))
+      : [];
+
+    const image: IImage = {
+      id: row.id,
+      url: row.url,
+      title: row.title,
+      description: row.description ?? undefined,
+      price: row.price ?? null,
+      amountAvailable: row.amount_available ?? null,
+      category: category,
+      materials: materialRows.length ? materialRows : null,
+    };
+
+    return image;
   }
 
   async getImagesByCategoryId(categoryId: string) {
