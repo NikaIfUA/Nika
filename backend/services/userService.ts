@@ -1,7 +1,7 @@
 import { RouterContext } from '../dependencies.ts';
 import { Database } from '../db/crud.ts';
 import { bcrypt } from '../dependencies.ts';
-import { generateToken } from "../util/jwt.ts";
+import { generateToken, blacklistToken } from "../util/jwt.ts";
 
 class UserService {
   public static async register(ctx: RouterContext<string>) {
@@ -31,10 +31,9 @@ class UserService {
         return;
       }
 
-      const saltRoundsString = Deno.env.get("saltRounds") || "10";
+      const saltRoundsString = "10";
       const saltRounds = parseInt(saltRoundsString);
       const salt = await bcrypt.genSalt(saltRounds);
-      console.log('Using static salt:', salt);
       const passwordHash = await bcrypt.hash(password, salt);
       const newUser = await db.createUser({
         name,
@@ -103,9 +102,37 @@ class UserService {
     }
   }
 
-  async logout(token: string): Promise<{ success: boolean }> {
-    // TODO: Implement user logout logic
-    return { success: false };
+  public static async logout(ctx: RouterContext<string>) {
+    try {
+      // Try to get token from Authorization header or from JSON body
+      const auth = ctx.request.headers.get('Authorization') || '';
+      let token: string | null = null;
+      const parts = auth.split(' ');
+      if (parts.length === 2 && parts[0] === 'Bearer') {
+        token = parts[1];
+      } else {
+        // fallback to body
+        const body = ctx.request.body;
+        if (body) {
+          const data = await body.json().catch(() => null);
+          token = data?.token ?? null;
+        }
+      }
+
+      if (!token) {
+        ctx.response.status = 400;
+        ctx.response.body = { message: 'No token provided for logout' };
+        return;
+      }
+
+      blacklistToken(token);
+      ctx.response.status = 200;
+      ctx.response.body = { success: true };
+    } catch (err) {
+      console.error('Logout failed:', err);
+      ctx.response.status = 500;
+      ctx.response.body = { success: false, message: 'Logout failed' };
+    }
   }
 }
 
