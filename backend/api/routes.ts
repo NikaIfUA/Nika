@@ -5,6 +5,7 @@ import CategoryService from "../services/categoryService.ts";
 import MaterialService from "../services/materialService.ts";
 import { API_PREFIX } from "../env.ts";
 import UserService from "../services/userService.ts";
+import { jwtMiddleware } from "../util/jwt.ts";
 
 const router = new Router();
 
@@ -20,5 +21,13 @@ router.post(`/${API_PREFIX}save-material`, MaterialService.saveMaterial);
 router.post(`/${API_PREFIX}save-image`, ImageService.uploadHandler);
 router.post(`/${API_PREFIX}auth/register`, UserService.register);
 router.post(`/${API_PREFIX}auth/login`, UserService.login);
+router.post(`/${API_PREFIX}auth/logout`, UserService.logout);
+
+// Protected admin route example
+router.get(`/${API_PREFIX}admin`, jwtMiddleware(), (ctx) => {
+	const user = ctx.state.user;
+	ctx.response.status = 200;
+	ctx.response.body = { message: 'Welcome to admin area', user };
+});
 
 export default router;

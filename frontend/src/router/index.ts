@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import TheHomeView from '../views/TheHomeView.vue'
 import TheAboutView from '../views/TheAboutView.vue'
 import TheInfoView from '../views/TheInfoView.vue'
@@ -48,5 +49,14 @@ const router = createRouter({
     }
   ],
 })
+
+// Global guard: protect admin route
+router.beforeEach((to, from, next) => {
+  const auth = useAuthStore();
+  if (to.name === 'admin' && !auth.token) {
+    return next({ name: 'auth' });
+  }
+  next();
+});
 
 export default router
