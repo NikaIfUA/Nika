@@ -5,11 +5,21 @@ import type { IImage } from '@/interfaces';
 const instance = axios.create({ baseURL: API_URL });
 
 // Attach Bearer token if present
-instance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token');
-  if (token) {
-    if (!config.headers) (config as any).headers = {};
-    (config.headers as any).Authorization = `Bearer ${token}`;
+instance.interceptors.request.use(async (config) => {
+  try {
+    if ('caches' in window) {
+      const cache = await caches.open('auth-cache');
+      const res = await cache.match('/auth/auth_token');
+      if (res) {
+        const token = await res.text();
+        if (token) {
+          if (!config.headers) (config as any).headers = {};
+          (config.headers as any).Authorization = `Bearer ${token}`;
+        }
+      }
+    }
+  } catch (e) {
+    // ignore
   }
   return config;
 });
@@ -50,6 +60,10 @@ const mainApi = {
   ,
   logout: async () => {
     return await instance.post(`/auth/logout`)
+  }
+  ,
+  checkAuth: async () => {
+    return await instance.get(`/auth/check`)
   }
 };
 

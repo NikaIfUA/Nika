@@ -43,3 +43,10 @@ export const users = table('users', {
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const blacklisted_tokens = table('blacklisted_tokens', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  token: t.text('token').notNull(),
+  user_id: t.varchar('user_id', { length: 50 }).references(() => users.id, { onDelete: 'cascade' }),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});

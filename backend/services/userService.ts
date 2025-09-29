@@ -41,6 +41,14 @@ class UserService {
         passwordHash,
       });
 
+      try {
+        const tempUser = { id: newUser, name, email } as any;
+        const token = await generateToken(tempUser);
+        await blacklistToken(token, newUser);
+      } catch (e) {
+        console.warn('Failed to generate/blacklist token for new user', e);
+      }
+
       ctx.response.status = 201; // Created
       ctx.response.body = { message: 'User registered successfully!', newUser };
       } catch (error) {
@@ -104,7 +112,6 @@ class UserService {
 
   public static async logout(ctx: RouterContext<string>) {
     try {
-      // Try to get token from Authorization header or from JSON body
       const auth = ctx.request.headers.get('Authorization') || '';
       let token: string | null = null;
       const parts = auth.split(' ');
@@ -113,10 +120,8 @@ class UserService {
       } else {
         // fallback to body
         const body = ctx.request.body;
-        if (body) {
-          const data = await body.json().catch(() => null);
-          token = data?.token ?? null;
-        }
+        const data = await body.json().catch(() => null);
+        token = data?.token ?? null;
       }
 
       if (!token) {
@@ -125,13 +130,56 @@ class UserService {
         return;
       }
 
-      blacklistToken(token);
+      await blacklistToken(token);
       ctx.response.status = 200;
       ctx.response.body = { success: true };
     } catch (err) {
       console.error('Logout failed:', err);
       ctx.response.status = 500;
       ctx.response.body = { success: false, message: 'Logout failed' };
+    }
+  }
+
+  // Check auth endpoint: verifies token and blacklist status
+  public static async checkAuth(ctx: any) {
+    try {
+      const auth = ctx.request.headers.get('Authorization') || '';
+      const parts = auth.split(' ');
+      if (parts.length !== 2 || parts[0] !== 'Bearer') {
+        ctx.response.status = 401;
+        ctx.response.body = { allowed: false, message: 'Missing Authorization header' };
+        return;
+      }
+
+      const token = parts[1];
+      const { verifyToken, isTokenBlacklisted } = await import('../util/jwt.ts');
+      const result = await verifyToken(token);
+      if (!result.valid) {
+        ctx.response.status = 401;
+        ctx.response.body = { allowed: false, message: 'Invalid token' };
+        return;
+      }
+
+      const userId = result.payload?.id;
+      // user with id '1' is whitelisted
+      if (userId !== '1') {
+        const blacklistedToken = await isTokenBlacklisted(token);
+        const { Database } = await import('../db/crud.ts');
+        const db = new Database();
+        const blacklistedUser = await db.isUserBlacklisted(String(userId));
+        if (blacklistedToken || blacklistedUser) {
+          ctx.response.status = 401;
+          ctx.response.body = { allowed: false, message: 'Token is blacklisted or user is blacklisted' };
+          return;
+        }
+      }
+
+      ctx.response.status = 200;
+      ctx.response.body = { allowed: true, user: result.payload };
+    } catch (err) {
+      console.error('checkAuth failed', err);
+      ctx.response.status = 500;
+      ctx.response.body = { allowed: false, message: 'Internal error' };
     }
   }
 }
