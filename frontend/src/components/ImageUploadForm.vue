@@ -25,6 +25,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { API_URL } from '@/env';
+import mainApi from '@/api/main.api';
+import { isAxiosError } from 'axios';
 import type { IImage } from '@/interfaces';
 import BaseInput from '@/components/BaseInput.vue';
 import BaseSelectBox from './BaseSelectBox.vue';
@@ -45,8 +47,9 @@ const materials = ref<Array<{ id: string; name: string }>>([]);
 
 async function fetchCategories() {
   try {
-  const res = await fetch(`${apiUrl}/get-categories`);
-    if (res.ok) categories.value = await res.json();
+    // Prefer using mainApi which is already configured with axios
+    const res = await mainApi.getAllCategories();
+    categories.value = res.data || [];
   } catch (e) {
     console.error('Error fetching categories', e);
   }
@@ -54,8 +57,8 @@ async function fetchCategories() {
 
 async function fetchMaterials() {
   try {
-  const res = await fetch(`${apiUrl}/get-materials`);
-    if (res.ok) materials.value = await res.json();
+    const res = await mainApi.getAllMaterials();
+    materials.value = res.data || [];
   } catch (e) {
     console.error('Error fetching materials', e);
   }
@@ -104,17 +107,8 @@ async function uploadImage() {
     formData.append('amountAvailable', imageAmountAvailable.value);
     formData.append('materialIds', JSON.stringify(imageMaterialIds.value));
 
-  const response = await fetch(`${apiUrl}/save-image`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`Upload failed: ${response.status} ${text}`);
-    }
-
-    const newImage: IImage = await response.json();
+    const resp = await mainApi.saveImage(formData);
+    const newImage: IImage = resp.data;
     emit('uploaded', newImage);
 
     // show localized success message
@@ -124,7 +118,10 @@ async function uploadImage() {
       successMessage.value = '';
     }, 4000);
   } catch (err) {
-    errorMessage.value = err instanceof Error ? err.message : String(err);
+      const message = isAxiosError(err)
+        ? (err.response?.data?.message ?? err.response?.data?.error ?? err.message)
+        : (err as Error)?.message ?? String(err);
+      errorMessage.value = message;
   } finally {
     uploading.value = false;
   }

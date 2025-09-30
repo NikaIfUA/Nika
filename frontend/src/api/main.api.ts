@@ -24,8 +24,22 @@ const mainApi = {
     return await axios.get(`${API_URL}/get-categories`);
   },
 
+  saveCategory: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
+    return await axios.post(`${API_URL}/save-category`, payload);
+  },
+
+  saveMaterial: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
+    return await axios.post(`${API_URL}/save-material`, payload);
+  },
+
   getAllMaterials: async (): Promise<AxiosResponse<any[]>> => {
     return await axios.get(`${API_URL}/get-materials`);
+  }
+,
+
+  saveImage: async (formData: FormData): Promise<AxiosResponse<any>> => {
+    // Let browser/axios set multipart Content-Type with proper boundary automatically
+    return await axios.post(`${API_URL}/save-image`, formData);
   }
 };
 

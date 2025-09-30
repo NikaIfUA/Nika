@@ -14,11 +14,13 @@
     <div v-if="errorMessage" class="upload-message error">{{ errorMessage }}</div>
   </div>
 </template>
+
 <script setup lang="ts">
 import { ref } from 'vue';
 import BaseInput from '@/components/BaseInput.vue';
 import BaseButton from './BaseButton.vue';
-import { API_URL } from '@/env';
+import mainApi from '@/api/main.api';
+import { isAxiosError } from 'axios';
 
 const emit = defineEmits(['uploaded']);
 
@@ -38,31 +40,24 @@ async function uploadMaterial() {
   errorMessage.value = '';
 
   try {
+    uploading.value = true;
     const payload = { name: materialName.value.trim() };
 
-    const res = await fetch(`${API_URL}/save-material`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const response = await mainApi.saveMaterial(payload);
+    const created = response.data;
 
-    if (!res.ok) {
-      let errMsg = res.statusText;
-
-      const json = await res.json();
-      errMsg = json?.message || json?.error || errMsg;
-
-      errorMessage.value = `Failed to create category: ${errMsg}`;
-      return;
-    }
-
-    const created = await res.json().catch(() => null);
     successMessage.value = 'Material created successfully.';
     materialName.value = '';
 
     emit('uploaded', created);
-  } catch (err: any) {
-    errorMessage.value = err?.message || String(err);
+  } catch (err: unknown) {
+    const message = isAxiosError(err)
+      ? (err.response?.data?.message ?? err.response?.data?.error ?? err.message)
+      : (err as Error)?.message ?? String(err);
+
+    errorMessage.value = message;
+  } finally {
+    uploading.value = false;
   }
 }
 </script>

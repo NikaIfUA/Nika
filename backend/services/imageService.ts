@@ -1,7 +1,7 @@
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH } from "../env.ts";
 import { IImage } from "../Interfaces.ts";
-import { Database } from "../db/crud.ts";
+import { getImageById, getImages, createImage } from "../db/crud/imageCrud.ts";
 import { join } from "../dependencies.ts";
 
 class ImageService {
@@ -39,8 +39,7 @@ class ImageService {
     try {
       const id = params.id;
 
-      const db = new Database();
-      const image = await db.getImageById(id);
+  const image = await getImageById(id);
       if (!image) {
         response.status = 404;
         response.body = { error: 'Image metadata not found' };
@@ -59,8 +58,7 @@ class ImageService {
 
   public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
-      const db = new Database();
-      const allImages = await db.getImages();
+  const allImages = await getImages();
 
       // Read all image files and collect them in an array
       const imagesData: Array<IImage & { fileName: string; mimeType: string; data: Uint8Array }> = [];
@@ -150,8 +148,7 @@ class ImageService {
 
       let savedImage: IImage;
       try {
-        const db = new Database();
-        const saved = await db.createImage(newImage);
+        const saved = await createImage(newImage);
 
         savedImage = {
           ...newImage,
