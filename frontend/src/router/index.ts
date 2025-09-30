@@ -25,6 +25,11 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: () => import('../views/TheAdminView.vue'),
+    },
+    {
+      path: '/admin/items',
+      name: 'items',
+      component: () => import('../components/ItemChooseToUploadForm.vue'),
     }
   ],
 })

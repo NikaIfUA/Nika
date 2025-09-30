@@ -6,24 +6,24 @@
 
   <!-- temporary image gallery -->
   <div class="image-gallery">
-    <div v-for="image in images" :key="image.id" class="image-card">
-      <img :src="image.url" :alt="image.title || 'NIKA project image'" />
-      <p v-if="image.title">{{ image.title }}</p>
+    <div v-for="item in images" :key="item.id" class="image-card">
+      <img :src="item.images[0]?.url" :alt="item.title || 'NIKA project image'" />
+      <p v-if="item.title">{{ item.title }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { IImage } from '../interfaces.ts';
+import type { IItem } from '../interfaces.ts';
 import mainApi from '@/api/main.api.ts';
 
-const images = ref<IImage[]>([]);
+const images = ref<IItem[]>([]);
 
 onMounted(async () => {
   try {
-    const response = await mainApi.getAllImages();
-    images.value = response.data;
+  const response = await mainApi.getAllImages();
+  images.value = response.data;
   } catch (error) {
     console.error("Error fetching images:", error);
   }

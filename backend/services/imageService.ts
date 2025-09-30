@@ -1,14 +1,14 @@
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH } from "../env.ts";
-import { IImage } from "../Interfaces.ts";
+import { IItem } from "../Interfaces.ts";
 import { Database } from "../db/crud.ts";
 import { join } from "../dependencies.ts";
 
 class ImageService {
   public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
-      const db = new Database();
-      const allImages = await db.getImages();
+    const db = new Database();
+    const allImages = await db.getItems();
 
       response.body = allImages;
     } catch (err) {
@@ -71,9 +71,8 @@ class ImageService {
       await Deno.writeFile(filePath, fileContent);
       console.log(`Image saved to ${filePath}`);
 
-      const newImage: IImage = {
+      const newItem: IItem = {
         id: globalThis.crypto.randomUUID(),
-        url: `${STORAGE_PATH}images/${filename}`,
         title: imageName,
         description: imageDescription,
         category: categoryId ? { id: categoryId, name: "" } : null,
@@ -81,25 +80,36 @@ class ImageService {
         amountAvailable: amountAvailable !== null ? amountAvailable : undefined,
         materials: materials && materials.length
           ? materials.map((id) => ({ id, name: "" }))
-          : undefined
+          : undefined,
+        images: [
+          {
+            id: globalThis.crypto.randomUUID(),
+            url: `${STORAGE_PATH}images/${filename}`,
+            description: imageDescription ?? undefined,
+            resolution: { width: 0, height: 0 },
+            mimeType: file.type || 'application/octet-stream',
+            weight: file.size ?? null,
+          }
+        ],
+        coverImage: ''
       };
 
-      let savedImage: IImage;
+      let savedItem: IItem;
       try {
         const db = new Database();
-        const saved = await db.createImage(newImage);
+        const saved = await db.createItem(newItem as any);
 
-        savedImage = {
-          ...newImage,
-          id: saved?.id ?? newImage.id,
-        } as IImage;
+        savedItem = {
+          ...newItem,
+          id: saved?.id ?? newItem.id,
+        } as IItem;
       } catch (err) {
         console.error('Failed to save image metadata to DB:', err);
-        savedImage = newImage;
+        savedItem = newItem;
       }
 
       context.response.status = 201;
-      context.response.body = savedImage;
+      context.response.body = savedItem;
 
     } catch (error) {
       console.error("Error during image upload:", error);

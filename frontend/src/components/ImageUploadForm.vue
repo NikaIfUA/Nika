@@ -21,7 +21,7 @@
 
 <script setup lang="ts">
 import { ref, toRefs } from 'vue';
-import type { IImage } from '@/interfaces';
+import type { IItem } from '@/interfaces';
 import BaseInput from '@/components/BaseInput.vue';
 import BaseSelectBox from './BaseSelectBox.vue';
 import BaseButton from './BaseButton.vue';
@@ -33,7 +33,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'uploaded', payload: IImage): void;
+  (e: 'uploaded', payload: IItem): void;
 }>();
 
 const { categories, materials } = toRefs(props as any);
@@ -73,8 +73,8 @@ async function uploadImage() {
     body: formData,
   });
 
-  const newImage: IImage = await response.json();
-  emit('uploaded', newImage);
+  const newItem: IItem = await response.json();
+  emit('uploaded', newItem);
 }
 </script>
 
