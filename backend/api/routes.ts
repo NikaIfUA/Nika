@@ -3,6 +3,7 @@ import MainService from "../services/mainService.ts";
 import ImageService from "../services/imageService.ts";
 import CategoryService from "../services/categoryService.ts";
 import MaterialService from "../services/materialService.ts";
+import ItemService from "../services/itemService.ts";
 import { API_PREFIX } from "../env.ts";
 import UserService from "../services/userService.ts";
 import { jwtMiddleware } from "../util/jwt.ts";
@@ -15,6 +16,10 @@ router.get(`/${API_PREFIX}get-image-by-id/:id`, ImageService.fetchImageById);
 router.get(`/${API_PREFIX}get-all-images`, ImageService.fetchAllImages);
 router.get(`/${API_PREFIX}get-categories`, CategoryService.getCategories);
 router.get(`/${API_PREFIX}get-materials`, MaterialService.getMaterials);
+router.get(`/${API_PREFIX}get-categories`, MainService.getCategories);
+router.get(`/${API_PREFIX}get-materials`, MainService.getMaterials);
+router.get(`/api/items`, ItemService.fetchItems);
+router.get(`/api/items/:id/image`, ItemService.fetchItemImage);
 
 router.post(`/${API_PREFIX}save-category`, CategoryService.saveCategory);
 router.post(`/${API_PREFIX}save-material`, MaterialService.saveMaterial);

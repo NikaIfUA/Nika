@@ -27,7 +27,7 @@ import { ref, onMounted } from 'vue';
 import { API_URL } from '@/env';
 import mainApi from '@/api/main.api';
 import { isAxiosError } from 'axios';
-import type { IImage } from '@/interfaces';
+import type { IImage,IItem } from '@/interfaces';
 import BaseInput from '@/components/BaseInput.vue';
 import BaseSelectBox from './BaseSelectBox.vue';
 import BaseButton from './BaseButton.vue';
@@ -39,7 +39,7 @@ const props = defineProps<{
 const apiUrl = props.apiUrl ?? API_URL;
 
 const emit = defineEmits<{
-  (e: 'uploaded', payload: IImage): void;
+  (e: 'uploaded', payload: IItem): void;
 }>();
 
 const categories = ref<Array<{ id: string; name: string }>>([]);
@@ -108,11 +108,11 @@ async function uploadImage() {
     formData.append('materialIds', JSON.stringify(imageMaterialIds.value));
 
     const resp = await mainApi.saveImage(formData);
-    const newImage: IImage = resp.data;
-    emit('uploaded', newImage);
+    const newItem: IItem = resp.data;
+    emit('uploaded', newItem);
 
     // show localized success message
-    successMessage.value = `Зображення "${newImage.title ?? imageName.value}" успішно завантажено.`;
+    successMessage.value = `Зображення "${newItem.title ?? imageName.value}" успішно завантажено.`;
     // hide after a short timeout
     setTimeout(() => {
       successMessage.value = '';
