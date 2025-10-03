@@ -16,12 +16,17 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@types/datatables.net": "^1.10.28",
     "axios": "^1.11.0",
     "datatables.net-dt": "^2.3.4",
+    "datatables.net-responsive-dt": "^3.0.7",
+    "datatables.net-select-dt": "^3.1.2",
     "datatables.net-vue3": "^3.0.4",
     "pinia": "^3.0.3",
     "vue": "^3.5.18",
-    "vue-router": "^4.5.1"
+    "vue-router": "^4.5.1",
+    "vue3-easy-data-table": "^1.5.47",
+    "vuetify": "^3.10.4"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

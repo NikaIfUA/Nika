@@ -7,7 +7,7 @@
   <!-- temporary image gallery -->
   <div class="image-gallery">
     <div v-for="item in images" :key="item.id" class="image-card">
-      <img :src="item.images[0]?.url" :alt="item.title || 'NIKA project image'" />
+      <img :src="getImageUrl(item.id)" :alt="item.title || 'NIKA project image'" />
       <p v-if="item.title">{{ item.title }}</p>
     </div>
   </div>
@@ -17,8 +17,15 @@
 import { ref, onMounted } from 'vue';
 import type { IItem } from '../interfaces.ts';
 import mainApi from '@/api/main.api.ts';
+import { API_URL } from '@/env';
 
 const images = ref<IItem[]>([]);
+
+const getImageUrl = (itemId: string): string => {
+  // Remove '/api' from API_URL and construct the full path to the image endpoint
+  const baseUrl = API_URL.replace('/api', '');
+  return `${baseUrl}/api/items/${itemId}/image`;
+};
 
 onMounted(async () => {
   try {
