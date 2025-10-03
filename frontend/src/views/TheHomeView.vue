@@ -7,7 +7,7 @@
   <!-- temporary image gallery -->
   <div class="image-gallery">
     <div v-for="item in images" :key="item.id" class="image-card">
-      <img :src="item.images[0]?.url" :alt="item.title || 'NIKA project image'" />
+      <img :src="getImageUrl(item.id)" :alt="item.title || 'NIKA project image'" />
       <p v-if="item.title">{{ item.title }}</p>
     </div>
       <div v-for="item in images" :key="item.id + '-gallery'" class="image-card" @click="openImage(item.images[0])">
@@ -24,10 +24,17 @@ import { ref, onMounted, reactive } from 'vue';
 import type { IImage, IItem } from '../interfaces.ts';
 import mainApi from '@/api/main.api.ts';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
+import { API_URL } from '@/env';
 
 const images = ref<IItem[]>([]);
 const selectedImage = ref<IImage | null>(null);
 const imageUrls = reactive<Record<string, string>>({});
+
+const getImageUrl = (itemId: string): string => {
+  // Remove '/api' from API_URL and construct the full path to the image endpoint
+  const baseUrl = API_URL.replace('/api', '');
+  return `${baseUrl}/api/items/${itemId}/image`;
+};
 
 onMounted(async () => {
   try {
