@@ -84,9 +84,7 @@ const mainApi = {
 
   // Item image endpoint (returns raw file when stored locally)
   getImage: async (itemId: string): Promise<AxiosResponse<Blob>> => {
-    // API_URL already contains '/api', so we construct the full path by replacing it
-    const baseUrl = API_URL.replace('/api', '');
-    return await axios.get(`${baseUrl}/api/items/${itemId}/image`, { responseType: 'blob' });
+    return await axios.get(`${API_URL}/items/${itemId}/image`, { responseType: 'blob' });
   }
 };
 

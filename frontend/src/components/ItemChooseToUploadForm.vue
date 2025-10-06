@@ -7,6 +7,7 @@
       :headers="headers"
       :items="items"
       :loading="loading"
+      @click:row="handleRowClick"
       item-value="id"
       class="elevation-1"
     >
@@ -80,6 +81,7 @@
   import { ref, onMounted } from 'vue'
   import mainApi from '@/api/main.api'
   import type { IItem } from '@/interfaces'
+  import router from '@/router'
 
   const headers = [
     { title: 'Фото', align: 'center' as const, key: 'coverImage', sortable: false },
@@ -89,7 +91,6 @@
     { title: 'Ціна', align: 'end' as const, key: 'price', sortable: true },
     { title: 'Доступно', align: 'center' as const, key: 'amountAvailable', sortable: true },
     { title: 'Матеріали', align: 'start' as const, key: 'materials', sortable: false },
-    { title: 'Зображення', align: 'center' as const, key: 'images', sortable: false },
   ]
 
   const items = ref<IItem[]>([])
@@ -97,40 +98,43 @@
   const error = ref<string | null>(null)
   const imageUrls = ref<Record<string, string>>({})
 
-  const fetchItems = async () => {
-    loading.value = true
-    error.value = null
-    try {
-      const response = await mainApi.getAllItems()
-      items.value = response.data
-      
-      // Завантажуємо зображення для кожного елемента
-      await loadImages()
-    } catch (err: any) {
-      error.value = err.message || 'Помилка завантаження даних'
-      console.error('Error fetching items:', err)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  const loadImages = async () => {
-    for (const item of items.value) {
-      try {
-        const response = await mainApi.getImage(item.id)
-        const blob = response.data
-        imageUrls.value[item.id] = URL.createObjectURL(blob)
-      } catch (err) {
-        console.error(`Error loading image for item ${item.id}:`, err)
-      }
-    }
-  }
-
   onMounted(() => {
     fetchItems()
   })
 
+  async function fetchItems() {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await mainApi.getAllItems();
+      items.value = response.data;
+      
+      await loadImages()
+    } catch (err: any) {
+      error.value = err.message || 'Помилка завантаження даних';
+      console.error('Error fetching items:', err);
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function loadImages() {
+    for (const item of items.value) {
+      try {
+        const response = await mainApi.getImage(item.id);
+        const blob = response.data;
+        imageUrls.value[item.id] = URL.createObjectURL(blob);
+      } catch (err) {
+        console.error(`Error loading image for item ${item.id}:`, err);
+      }
+    }
+  }
+
+  async function handleRowClick() {
+    router.push('/admin')
+  }
+
   function formatPrice(value: number): string {
-    return `${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')} грн`
+    return `${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')} грн`;
   }
 </script>
