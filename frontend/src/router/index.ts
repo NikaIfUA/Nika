@@ -41,6 +41,11 @@ const router = createRouter({
       name: 'uploadMaterial',
       component: () => import('../components/MaterialUploadForm.vue'),
     },
+    {
+      path: '/auth',
+      name: 'auth',
+      component: () => import('../views/TheAuthView.vue'),
+    }
   ],
 })
 

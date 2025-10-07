@@ -4,6 +4,7 @@ import ImageService from "../services/imageService.ts";
 import CategoryService from "../services/categoryService.ts";
 import MaterialService from "../services/materialService.ts";
 import { API_PREFIX } from "../env.ts";
+import UserService from "../services/userService.ts";
 
 const router = new Router();
 
@@ -17,5 +18,6 @@ router.get(`/${API_PREFIX}get-materials`, MaterialService.getMaterials);
 router.post(`/${API_PREFIX}save-category`, CategoryService.saveCategory);
 router.post(`/${API_PREFIX}save-material`, MaterialService.saveMaterial);
 router.post(`/${API_PREFIX}save-image`, ImageService.uploadHandler);
+router.post(`/${API_PREFIX}auth/register`, UserService.register);
 
 export default router;

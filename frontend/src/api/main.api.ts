@@ -34,6 +34,14 @@ const mainApi = {
 
   getAllMaterials: async (): Promise<AxiosResponse<any[]>> => {
     return await axios.get(`${API_URL}/get-materials`);
+  },
+
+  login: async (credentials: { email: string; password: string }) => {
+    return await axios.post(`${API_URL}/auth/login`, credentials)
+  },
+  
+  register: async (data: { name: string; email: string; password: string }) => {
+    return await axios.post(`${API_URL}/auth/register`, data)
   }
 ,
 
