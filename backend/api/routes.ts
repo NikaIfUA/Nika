@@ -23,11 +23,9 @@ router.post(`/${API_PREFIX}auth/register`, UserService.register);
 router.post(`/${API_PREFIX}auth/login`, UserService.login);
 router.post(`/${API_PREFIX}auth/logout`, UserService.logout);
 
+router.get(`/${API_PREFIX}auth/check`, UserService.checkAuth);
+
 // Protected admin route example
-router.get(`/${API_PREFIX}admin`, jwtMiddleware(), (ctx) => {
-	const user = ctx.state.user;
-	ctx.response.status = 200;
-	ctx.response.body = { message: 'Welcome to admin area', user };
-});
+router.get(`/${API_PREFIX}admin`, jwtMiddleware());
 
 export default router;

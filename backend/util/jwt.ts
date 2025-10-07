@@ -1,5 +1,6 @@
 import { create, verify } from "../dependencies.ts";
 import { IUser } from "../interfaces.ts";
+import { Database } from '../db/crud.ts';
 
 const JWT_SECRET_KEY = Deno.env.get("JWT_SECRET_KEY") || "your-secret-key";
 
@@ -18,7 +19,7 @@ export async function generateToken(user: IUser): Promise<string> {
   const payload = {
     id: user.id,
     email: user.email,
-    exp: Date.now() / 1000 + 60 * 60, // token expires in 1 hour
+    exp: Date.now() / 1000 + 60 * 60 * 24 * 7, // token expires in 1 week
   };
 
   const key = await getCryptoKey(JWT_SECRET_KEY);
@@ -48,17 +49,23 @@ export function jwtMiddleware() {
     }
 
     const token = parts[1];
-    // Check blacklist
-    if (isTokenBlacklisted(token)) {
-      ctx.response.status = 401;
-      ctx.response.body = { message: 'Unauthorized: Token has been revoked' };
-      return;
-    }
+    const db = new Database();
     const result = await verifyToken(token);
     if (!result.valid) {
       ctx.response.status = 401;
       ctx.response.body = { message: 'Unauthorized: Invalid token' };
       return;
+    }
+
+    const userId = result.payload?.id;
+    if (userId !== '1') {
+      const blacklistedToken = await db.isTokenBlacklisted(token);
+      const blacklistedUser = await db.isUserBlacklisted(String(userId));
+      if (blacklistedToken || blacklistedUser) {
+        ctx.response.status = 401;
+        ctx.response.body = { message: 'Unauthorized: Token has been revoked or user is blacklisted' };
+        return;
+      }
     }
 
     // attach user info to context.state.user for downstream handlers
@@ -67,13 +74,13 @@ export function jwtMiddleware() {
   };
 }
 
-// Simple in-memory blacklist for tokens (for demo). In production, persist in DB or cache.
-const blacklistedTokens = new Set<string>();
-
-export function blacklistToken(token: string) {
-  blacklistedTokens.add(token);
+export async function blacklistToken(token: string, userId?: string) {
+  const db = new Database();
+  if (userId === '1') return null;
+  return await db.addTokenToBlacklist(token, userId);
 }
 
-export function isTokenBlacklisted(token: string) {
-  return blacklistedTokens.has(token);
+export async function isTokenBlacklisted(token: string) {
+  const db = new Database();
+  return await db.isTokenBlacklisted(token);
 }

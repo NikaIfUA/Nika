@@ -6,7 +6,7 @@
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
         <RouterLink to="/info">Info</RouterLink>
-        <RouterLink to="/admin">Admin</RouterLink>
+        <RouterLink v-if="auth.allowed" to="/admin">Admin</RouterLink>
       </div>
     </nav>
     <div class="nav-right">

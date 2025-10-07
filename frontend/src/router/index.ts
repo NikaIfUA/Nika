@@ -51,10 +51,13 @@ const router = createRouter({
 })
 
 // Global guard: protect admin route
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore();
-  if (to.name === 'admin' && !auth.token) {
-    return next({ name: 'auth' });
+  if (to.name === 'admin') {
+    if (!auth.token) return next({ name: 'auth' });
+    // re-verify token with backend (handles blacklist changes)
+    await auth.verifyToken();
+    if (!auth.allowed) return next({ name: 'home' });
   }
   next();
 });
