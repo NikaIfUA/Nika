@@ -39,6 +39,7 @@ export const users = table('users', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   name: t.varchar('name', { length: 255 }).notNull(),
   email: t.varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: t.varchar('password_hash', { length: 255 }).notNull(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
