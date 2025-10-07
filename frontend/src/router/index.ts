@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import TheHomeView from '../views/TheHomeView.vue'
 import TheAboutView from '../views/TheAboutView.vue'
 import TheInfoView from '../views/TheInfoView.vue'
@@ -41,7 +42,24 @@ const router = createRouter({
       name: 'uploadMaterial',
       component: () => import('../components/MaterialUploadForm.vue'),
     },
+    {
+      path: '/auth',
+      name: 'auth',
+      component: () => import('../views/TheAuthView.vue'),
+    }
   ],
 })
+
+// Global guard: protect admin route
+router.beforeEach(async (to, from, next) => {
+  const auth = useAuthStore();
+  if (to.name === 'admin') {
+    if (!auth.token) return next({ name: 'auth' });
+    // re-verify token with backend (handles blacklist changes)
+    await auth.verifyToken();
+    if (!auth.allowed) return next({ name: 'home' });
+  }
+  next();
+});
 
 export default router

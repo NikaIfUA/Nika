@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
 import { categories, images, materials, imageMaterials } from './schema.ts';
-import { ICategory, IMaterial } from '../Interfaces.ts';
+import { ICategory, IMaterial } from '../interfaces.ts';
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
 console.log('Seeding started...');
