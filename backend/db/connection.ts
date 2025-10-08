@@ -1,6 +1,6 @@
-import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import { drizzle, type PostgresJsDatabase } from 'npm:drizzle-orm/postgres-js';
 import * as dbSchema from './schema.ts';
-import postgres from 'postgres';
+import postgres from 'npm:postgres';
 
 const cached: { db?: PostgresJsDatabase<typeof dbSchema> } = {};
 

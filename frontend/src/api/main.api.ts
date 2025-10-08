@@ -1,6 +1,6 @@
 import { API_URL } from '@/env';
 import axios, { type AxiosResponse } from 'axios';
-import type { IImage } from '@/interfaces';
+import type { IImage, IItem } from '@/interfaces';
 
 const instance = axios.create({ baseURL: API_URL });
 
@@ -76,6 +76,24 @@ const mainApi = {
   },
 
   checkAuth: async () => { return await instance.get(`/auth/check`) },
+
+  // Use the backend endpoint that returns full item objects (including images)
+  getAllItems: async (): Promise<AxiosResponse<IItem[]>> => {
+    return await axios.get(`${API_URL}/get-all-images`);
+  },
+
+  // Item image endpoint (returns raw file when stored locally)
+  getImage: async (itemId: string): Promise<AxiosResponse<Blob>> => {
+    return await axios.get(`${API_URL}/items/${itemId}/image`, { responseType: 'blob' });
+  },
+
+  uploadItem: async (formData: FormData): Promise<AxiosResponse<IItem>> => {
+    return await axios.post(`${API_URL}/save-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  }
 };
 
 export default mainApi;

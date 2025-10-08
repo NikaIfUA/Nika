@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.ts';
-import { categories, images, materials, imageMaterials } from './schema.ts';
+import { categories, images, materials, imageMaterials, items } from './schema.ts';
 import { ICategory, IMaterial } from '../interfaces.ts';
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
@@ -19,8 +19,9 @@ async function seed() {
   console.log('Clearing existing data...');
   // Delete in safe order and continue on errors (e.g. relation doesn't exist)
   const deletes: { name: string; action: () => Promise<unknown> }[] = [
-    { name: 'image_materials', action: () => db.delete(imageMaterials) },
     { name: 'images', action: () => db.delete(images) },
+    { name: 'image_materials', action: () => db.delete(imageMaterials) },
+    { name: 'items', action: () => db.delete(items) },
     { name: 'categories', action: () => db.delete(categories) },
     { name: 'materials', action: () => db.delete(materials) },
   ];

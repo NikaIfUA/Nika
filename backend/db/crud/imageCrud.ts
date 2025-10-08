@@ -1,9 +1,9 @@
 import { getDbInstance } from '../connection.ts';
-import { images, categories, materials, imageMaterials } from '../schema.ts';
-import { eq, inArray } from 'drizzle-orm';
-import type { IImage } from '../../Interfaces.ts';
+import { images, categories, materials, imageMaterials, items } from '../schema.ts';
+import { eq, inArray } from 'npm:drizzle-orm';
+import type { IImage, IItem } from '../../Interfaces.ts';
 
-async function mapImageRowsToIImage(db: any, rows: any[]): Promise<IImage[]> {
+async function mapImageRowsToIImage(db: any, rows: any[]) {
   if (!rows || !rows.length) return [];
 
   const categoryIds = Array.from(new Set(rows.map((r) => r.category_id).filter(Boolean)));
@@ -19,7 +19,7 @@ async function mapImageRowsToIImage(db: any, rows: any[]): Promise<IImage[]> {
 
   const materialIds = Array.from(new Set(imageMaterialRows.map((im: any) => im.material_id)));
   const materialRows = materialIds.length
-    ? await db.select().from(materials).where(inArray(materials.id, materialIds))
+    ? await db.select().from(materials).where(inArray(materials.id, materialIds as string[]))
     : [];
   const materialMap = new Map(materialRows.map((m: any) => [m.id, m]));
 
@@ -32,13 +32,21 @@ async function mapImageRowsToIImage(db: any, rows: any[]): Promise<IImage[]> {
 
   return rows.map((row) => {
     const mats = (imageToMaterialIds.get(row.id) ?? []).map((mid) => materialMap.get(mid)).filter(Boolean);
-    const img: IImage = {
+    const img: IItem = {
       id: row.id,
-      url: row.url,
       title: row.title,
       description: row.description ?? undefined,
       price: row.price ?? null,
       amountAvailable: row.amount_available ?? null,
+      images: [{
+        id: row.id,
+        url: row.url,
+        resolution: { width: row.width, height: row.height },
+        mimeType: row.mime_type,
+        weight: row.weight ?? null,
+        description: row.description ?? undefined,
+      }],
+      coverImage: row.url,
       category: (categoriesMap.get(row.category_id) as any) ?? null,
       materials: mats.length ? (mats as any) : null,
     };
@@ -61,13 +69,13 @@ export async function getImageById(id: string) {
   return result[0];
 }
 
-export async function getImagesByCategoryId(categoryId: string) {
+export async function getItemsByCategoryId(categoryId: string) {
   const db = getDbInstance();
-  const rows = await db.select().from(images).where(eq(images.category_id, categoryId));
+  const rows = await db.select().from(items).where(eq(items.category_id, categoryId));
   return await mapImageRowsToIImage(db, rows);
 }
 
-export async function createImage(data: IImage) {
+export async function createImage(data: IItem) {
   const db = getDbInstance();
   const imageId = data.id ?? globalThis.crypto.randomUUID();
 

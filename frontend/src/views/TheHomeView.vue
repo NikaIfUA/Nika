@@ -6,9 +6,13 @@
 
   <!-- temporary image gallery -->
   <div class="image-gallery">
-      <div v-for="image in images" :key="image.id" class="image-card" @click="openImage(image)">
-        <img :src="imageUrls[image.id]" :alt="image.title || 'NIKA project image'" />
-        <p v-if="image.title">{{ image.title }}</p>
+    <div v-for="item in images" :key="item.id" class="image-card">
+      <img :src="getImageUrl(item.id)" :alt="item.title || 'NIKA project image'" />
+      <p v-if="item.title">{{ item.title }}</p>
+    </div>
+      <div v-for="item in images" :key="item.id + '-gallery'" class="image-card" @click="openImage(item.images[0])">
+        <img :src="imageUrls[item.id]" :alt="item.title || 'NIKA project image'" />
+        <p v-if="item.title">{{ item.title }}</p>
       </div>
   </div>
 
@@ -17,23 +21,39 @@
 
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
-import type { IImage } from '../interfaces.ts';
+import type { IImage, IItem } from '../interfaces.ts';
 import mainApi from '@/api/main.api.ts';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
+import { API_URL } from '@/env';
 
-const images = ref<(IImage & { data: Record<string, number>; mimeType: string })[]>([]);
+const images = ref<IItem[]>([]);
 const selectedImage = ref<IImage | null>(null);
 const imageUrls = reactive<Record<string, string>>({});
+
+const getImageUrl = (itemId: string): string => {
+  // Remove '/api' from API_URL and construct the full path to the image endpoint
+  const baseUrl = API_URL.replace('/api', '');
+  return `${baseUrl}/api/items/${itemId}/image`;
+};
 
 onMounted(async () => {
   try {
     const response = await mainApi.getAllImages();
-    images.value = response.data as (IImage & { data: Record<string, number>; mimeType: string })[];
+    images.value = (response.data as IImage[]).map((img) => ({
+      id: img.id,
+      title: img.description || 'Untitled Image',  // Required property
+      description: img.description || null,
+      category: null,
+      price: null,
+      amountAvailable: null,
+      materials: null,
+      images: [img],
+      coverImage: img.id
+    }));
 
     for (const img of images.value) {
-      const imageBytes = new Uint8Array(Object.values(img.data));
-      const blob = new Blob([imageBytes], { type: img.mimeType });
-      imageUrls[img.id] = URL.createObjectURL(blob);
+      // Use the URL directly from the image object
+      imageUrls[img.id] = img.images[0].url;
     }
 
   } catch (error) {

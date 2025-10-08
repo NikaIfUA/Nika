@@ -1,7 +1,8 @@
 import { RouterContext } from "../dependencies.ts";
 import { STORAGE_PATH } from "../env.ts";
-import { IImage } from "../Interfaces.ts";
 import { getImageById, getImages, createImage } from "../db/crud/imageCrud.ts";
+import { IImage, IItem } from "../Interfaces.ts";
+import { Database } from "../db/crud.ts";
 import { join } from "../dependencies.ts";
 
 class ImageService {
@@ -39,14 +40,14 @@ class ImageService {
     try {
       const id = params.id;
 
-  const image = await getImageById(id);
-      if (!image) {
+      const image = await getImageById(id);
+      if (!image || !image.images?.[0]) {
         response.status = 404;
         response.body = { error: 'Image metadata not found' };
         return;
       }
 
-      const { fileBytes, mime } = await ImageService.readImageFile(image.url);
+      const { fileBytes, mime } = await ImageService.readImageFile(image.images[0].url);
       response.headers.set('Content-Type', mime);
       response.body = fileBytes;
     } catch (err) {
@@ -63,11 +64,19 @@ class ImageService {
       // Read all image files and collect them in an array
       const imagesData: Array<IImage & { fileName: string; mimeType: string; data: Uint8Array }> = [];
       for (const img of allImages) {
-        const { fileName, fileBytes, mime } = await ImageService.readImageFile(img.url);
+        const imageUrl = img.images && img.images[0] ? img.images[0].url : '';
+        const { fileName, fileBytes, mime } = await ImageService.readImageFile(imageUrl);
         imagesData.push({
-          ...img,
-          fileName,
+          id: img.id,
+          url: imageUrl,
+          description: img.description ?? undefined,
+          resolution: {
+            width: (img as any).resolution_width ?? 0,
+            height: (img as any).resolution_height ?? 0
+          },
           mimeType: mime,
+          weight: null,
+          fileName,
           data: fileBytes
         });
       }
@@ -133,9 +142,8 @@ class ImageService {
       await Deno.writeFile(filePath, fileContent);
       console.log(`Image saved to ${filePath}`);
 
-      const newImage: IImage = {
+      const newItem: IItem = {
         id: globalThis.crypto.randomUUID(),
-        url: `${STORAGE_PATH}images/${filename}`,
         title: imageName,
         description: imageDescription,
         category: categoryId ? { id: categoryId, name: "" } : null,
@@ -143,24 +151,36 @@ class ImageService {
         amountAvailable: amountAvailable !== null ? amountAvailable : undefined,
         materials: materials && materials.length
           ? materials.map((id) => ({ id, name: "" }))
-          : undefined
+          : undefined,
+        images: [
+          {
+            id: globalThis.crypto.randomUUID(),
+            url: `${STORAGE_PATH}images/${filename}`,
+            description: imageDescription ?? undefined,
+            resolution: { width: 0, height: 0 },
+            mimeType: file.type || 'application/octet-stream',
+            weight: file.size ?? null,
+          }
+        ],
+        coverImage: ''
       };
 
-      let savedImage: IImage;
+      let savedItem: IItem;
       try {
-        const saved = await createImage(newImage);
+        const db = new Database();
+        const saved = await db.createItem(newItem as any);
 
-        savedImage = {
-          ...newImage,
-          id: saved?.id ?? newImage.id,
-        } as IImage;
+        savedItem = {
+          ...newItem,
+          id: saved?.id ?? newItem.id,
+        } as IItem;
       } catch (err) {
         console.error('Failed to save image metadata to DB:', err);
-        savedImage = newImage;
+        savedItem = newItem;
       }
 
       context.response.status = 201;
-      context.response.body = savedImage;
+      context.response.body = savedItem;
 
     } catch (error) {
       console.error("Error during image upload:", error);
