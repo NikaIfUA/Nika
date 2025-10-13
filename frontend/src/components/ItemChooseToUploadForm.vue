@@ -2,6 +2,18 @@
   <div>
     <v-progress-linear v-if="loading" indeterminate color="primary"></v-progress-linear>
     <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
+
+    <v-toolbar flat class="mb-2">
+      <v-toolbar-title>Список товарів</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn
+        color="primary"
+        prepend-icon="mdi-plus"
+        @click="navigateToCreatePage"
+      >
+        Додати товар
+      </v-btn>
+    </v-toolbar>
     
     <v-data-table
       :headers="headers"
@@ -57,12 +69,12 @@
       </template>
 
       <template v-slot:item.materials="{ item }">
-        <div v-if="item.materials && item.materials.length > 0">
+        <div v-if="item.materials && item.materials.length > 0" class="py-1">
           <v-chip 
             v-for="material in item.materials" 
             :key="material.id" 
             size="small" 
-            class="mr-1"
+            class="mr-1 mb-1"
           >
             {{ material.name }}
           </v-chip>
@@ -86,7 +98,7 @@
   const headers = [
     { title: 'Фото', align: 'center' as const, key: 'coverImage', sortable: false },
     { title: 'Назва', align: 'start' as const, key: 'title', sortable: true },
-    { title: 'Опис', align: 'start' as const, key: 'description', sortable: false },
+    { title: 'Опис', align: 'start' as const, key: 'description', sortable: false, width: '30%' },
     { title: 'Категорія', align: 'center' as const, key: 'category', sortable: true },
     { title: 'Ціна', align: 'end' as const, key: 'price', sortable: true },
     { title: 'Доступно', align: 'center' as const, key: 'amountAvailable', sortable: true },
@@ -119,7 +131,7 @@
   }
 
   async function loadImages() {
-    for (const item of items.value) {
+    const imagePromises = items.value.map(async (item) => {
       try {
         const response = await mainApi.getImage(item.id);
         const blob = response.data;
@@ -127,14 +139,19 @@
       } catch (err) {
         console.error(`Error loading image for item ${item.id}:`, err);
       }
-    }
+    });
+    await Promise.all(imagePromises);
   }
 
-  async function handleRowClick() {
-    router.push('/admin')
-  }
+function navigateToCreatePage() {
+  router.replace('/admin/item/new');
+}
+
+function handleRowClick(event: Event, { item }: { item: IItem }) {
+  router.replace(`/admin/item/${item.id}`);
+}
 
   function formatPrice(value: number): string {
-    return `${value.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,')} грн`;
+    return new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(value);
   }
 </script>

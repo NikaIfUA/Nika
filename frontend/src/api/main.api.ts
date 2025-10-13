@@ -26,74 +26,76 @@ instance.interceptors.request.use(async (config) => {
 
 
 const mainApi = {
-  getFileContent: async (fileName: string): Promise<AxiosResponse<string>> => {
-    return await instance.get(`/get-file-content/${fileName}`);
+  // --- Item API ---
+
+  // ✅ CORRECTED: Отримує всі товари
+  getAllItems: (): Promise<AxiosResponse<IItem[]>> => {
+    return instance.get('/items');
   },
 
-  getInfo: async (): Promise<AxiosResponse<string>> => {
-    return await instance.get(`/get-info`);
+  // ✅ CORRECTED: Отримує один товар за ID
+  getItemById: (id: string): Promise<AxiosResponse<IItem>> => {
+    return instance.get(`/items/${id}`);
   },
 
-  getAllImages: async (): Promise<AxiosResponse<IImage[]>> => {
-    return await instance.get(`/get-all-images`);
-  },
-
-  getImageById: async (id: string): Promise<AxiosResponse<Blob>> => {
-    return await instance.get(`/get-image-by-id/${id}`, { responseType: 'blob' });
-  },
-
-  getAllCategories: async (): Promise<AxiosResponse<any[]>> => {
-    return await instance.get(`/get-categories`);
-  },
-
-  saveCategory: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${API_URL}/save-category`, payload);
-  },
-
-  saveMaterial: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${API_URL}/save-material`, payload);
-  },
-
-  getAllMaterials: async (): Promise<AxiosResponse<any[]>> => {
-    return await instance.get(`/get-materials`);
-  },
-
-  login: async (credentials: { email: string; password: string }) => {
-    return await instance.post(`/auth/login`, credentials)
-  },
-  
-  register: async (data: { name: string; email: string; password: string }) => {
-    return await instance.post(`/auth/register`, data)
-  },
-
-  logout: async () => {
-    return await instance.post(`/auth/logout`)
-  },
-
-  saveImage: async (formData: FormData): Promise<AxiosResponse<any>> => {
-    // Let browser/axios set multipart Content-Type with proper boundary automatically
-    return await axios.post(`${API_URL}/save-image`, formData);
-  },
-
-  checkAuth: async () => { return await instance.get(`/auth/check`) },
-
-  // Use the backend endpoint that returns full item objects (including images)
-  getAllItems: async (): Promise<AxiosResponse<IItem[]>> => {
-    return await axios.get(`${API_URL}/get-all-images`);
-  },
-
-  // Item image endpoint (returns raw file when stored locally)
-  getImage: async (itemId: string): Promise<AxiosResponse<Blob>> => {
-    return await axios.get(`${API_URL}/items/${itemId}/image`, { responseType: 'blob' });
-  },
-
-  uploadItem: async (formData: FormData): Promise<AxiosResponse<IItem>> => {
-    return await axios.post(`${API_URL}/save-image`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+  // ✅ CORRECTED: Створює новий товар
+  createItem: (formData: FormData): Promise<AxiosResponse<IItem>> => {
+    return instance.post('/items', formData, { // <-- Змінено шлях з '/save-item' на '/items'
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
-  }
+  },
+
+  // ✅ CORRECTED: Оновлює товар за ID
+  updateItem: (id: string, formData: FormData): Promise<AxiosResponse<IItem>> => {
+    return instance.put(`/items/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  // ✅ CORRECTED: Отримує файл зображення для товару
+  getImage: (itemId: string): Promise<AxiosResponse<Blob>> => {
+    return instance.get(`/items/${itemId}/image`, { responseType: 'blob' });
+  },
+
+  // --- Category & Material API ---
+
+  getAllCategories: (): Promise<AxiosResponse<any[]>> => {
+    return instance.get(`/get-categories`);
+  },
+
+  saveCategory: (payload: { name: string }): Promise<AxiosResponse<any>> => {
+    return instance.post(`/save-category`, payload);
+  },
+
+  getAllMaterials: (): Promise<AxiosResponse<any[]>> => {
+    return instance.get(`/get-materials`);
+  },
+
+  saveMaterial: (payload: { name: string }): Promise<AxiosResponse<any>> => {
+    return instance.post(`/save-material`, payload);
+  },
+
+  // --- Auth API ---
+
+  login: (credentials: { email: string; password: string }) => {
+    return instance.post(`/auth/login`, credentials);
+  },
+
+  register: (data: { name: string; email: string; password: string }) => {
+    return instance.post(`/auth/register`, data);
+  },
+
+  logout: () => {
+    return instance.post(`/auth/logout`);
+  },
+
+  checkAuth: () => {
+    return instance.get(`/auth/check`);
+  },
+
+  getImageUrl: (itemId: string): string => {
+    return `${API_URL}/items/${itemId}/image`;
+  },
 };
 
 export default mainApi;

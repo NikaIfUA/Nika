@@ -19,9 +19,9 @@ const vuetify = createVuetify({
 
 const app = createApp(App)
 
-app.use(createPinia() as any)
-app.use(router as any)
-app.use(vuetify as any)
+app.use(createPinia())
+app.use(router)
+app.use(vuetify)
 
 const auth = useAuthStore()
 auth.initFromCache().catch(() => null)

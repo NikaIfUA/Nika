@@ -1,9 +1,9 @@
 import { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { eq, inArray } from 'drizzle-orm/';
-import * as schema from './schema.ts'; // Import all schemas
-import { categories, images, materials, imageMaterials, users, blacklisted_tokens } from './schema.ts';
-import type { IImage, IUser } from '../interfaces.ts';
-import { getDbInstance } from './connection.ts';
+import { eq } from 'drizzle-orm/';
+import * as schema from '../schema.ts'; // Import all schemas
+import { users, blacklisted_tokens } from '../schema.ts';
+import type { IUser } from '../../Interfaces.ts';
+import { getDbInstance } from '../connection.ts';
 
 export class Database {
   private db: PostgresJsDatabase<typeof schema>;

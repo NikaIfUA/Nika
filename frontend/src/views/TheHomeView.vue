@@ -4,65 +4,43 @@
     <h3>Here you can find information about the developers.</h3>
   </div>
 
-  <!-- temporary image gallery -->
   <div class="image-gallery">
-    <div v-for="item in images" :key="item.id" class="image-card">
-      <img :src="getImageUrl(item.id)" :alt="item.title || 'NIKA project image'" />
+    <div v-for="item in items" :key="item.id" class="image-card" @click="openModal(item)">
+      <img :src="mainApi.getImageUrl(item.id)" :alt="item.title || 'NIKA project image'" />
       <p v-if="item.title">{{ item.title }}</p>
     </div>
-      <div v-for="item in images" :key="item.id + '-gallery'" class="image-card" @click="openImage(item.images[0])">
-        <img :src="imageUrls[item.id]" :alt="item.title || 'NIKA project image'" />
-        <p v-if="item.title">{{ item.title }}</p>
-      </div>
   </div>
 
-  <ImageDetailsModal v-if="selectedImage" :image="selectedImage" :imageUrl="imageUrls[selectedImage.id]" @close="selectedImage = null" />
+  <ImageDetailsModal v-if="selectedItemId" :itemId="selectedItemId" @close="closeModal" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
-import type { IImage, IItem } from '../interfaces.ts';
-import mainApi from '@/api/main.api.ts';
+import { ref, onMounted } from 'vue';
+import type { IImage, IItem } from '../interfaces';
+import mainApi from '@/api/main.api';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
-import { API_URL } from '@/env';
 
-const images = ref<IItem[]>([]);
+const items = ref<IItem[]>([]);
 const selectedImage = ref<IImage | null>(null);
-const imageUrls = reactive<Record<string, string>>({});
-
-const getImageUrl = (itemId: string): string => {
-  // Remove '/api' from API_URL and construct the full path to the image endpoint
-  const baseUrl = API_URL.replace('/api', '');
-  return `${baseUrl}/api/items/${itemId}/image`;
-};
+const selectedImageUrl = ref<string>('');
 
 onMounted(async () => {
   try {
-    const response = await mainApi.getAllImages();
-    images.value = (response.data as IImage[]).map((img) => ({
-      id: img.id,
-      title: img.description || 'Untitled Image',  // Required property
-      description: img.description || null,
-      category: null,
-      price: null,
-      amountAvailable: null,
-      materials: null,
-      images: [img],
-      coverImage: img.id
-    }));
-
-    for (const img of images.value) {
-      // Use the URL directly from the image object
-      imageUrls[img.id] = img.images[0].url;
-    }
-
+    const response = await mainApi.getAllItems();
+    items.value = response.data;
   } catch (error) {
-    console.error("Error fetching images:", error);
+    console.error("Error fetching items:", error);
   }
 });
 
-function openImage(img: IImage) {
-  selectedImage.value = img;
+const selectedItemId = ref<string | null>(null);
+
+function openModal(item: IItem) {
+  selectedItemId.value = item.id;
+}
+
+function closeModal() {
+  selectedItemId.value = null;
 }
 </script>
 
@@ -97,6 +75,7 @@ h3 {
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease-in-out;
+  cursor: pointer;
 }
 
 .image-card:hover {
@@ -115,13 +94,6 @@ h3 {
   font-weight: 500;
   color: #333;
 }
-
-.loading-message {
-    text-align: center;
-    margin-top: 2rem;
-    color: #888;
-}
-
 
 @media (min-width: 1024px) {
   .greetings h1,

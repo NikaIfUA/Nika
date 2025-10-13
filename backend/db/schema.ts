@@ -1,5 +1,5 @@
-import { pgTable as table } from "npm:drizzle-orm/pg-core";
-import * as t from "npm:drizzle-orm/pg-core";
+import { pgTable as table } from "drizzle-orm/pg-core";
+import * as t from "drizzle-orm/pg-core";
 
 export const categories = table('categories', {
   id: t.varchar('id', { length: 50 }).primaryKey(),

@@ -28,9 +28,14 @@ const router = createRouter({
       component: () => import('../views/TheAdminView.vue'),
     },
     {
-      path: '/admin/image',
-      name: 'uploadImage',
-      component: () => import('../components/ImageUploadForm.vue'),
+      path: '/admin/item/new',
+      name: 'uploadItem',
+      component: () => import('../components/ItemUploadForm.vue'),
+    },
+    {
+      path: '/admin/item/:id',
+      name: 'editItem',
+      component: () => import('../components/ItemUploadForm.vue'),
     },
     {
       path: '/admin/category',
