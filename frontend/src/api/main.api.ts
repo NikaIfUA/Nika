@@ -26,38 +26,29 @@ instance.interceptors.request.use(async (config) => {
 
 
 const mainApi = {
-  // --- Item API ---
-
-  // ✅ CORRECTED: Отримує всі товари
   getAllItems: (): Promise<AxiosResponse<IItem[]>> => {
     return instance.get('/items');
   },
 
-  // ✅ CORRECTED: Отримує один товар за ID
   getItemById: (id: string): Promise<AxiosResponse<IItem>> => {
     return instance.get(`/items/${id}`);
   },
 
-  // ✅ CORRECTED: Створює новий товар
   createItem: (formData: FormData): Promise<AxiosResponse<IItem>> => {
-    return instance.post('/items', formData, { // <-- Змінено шлях з '/save-item' на '/items'
+    return instance.post('/items', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 
-  // ✅ CORRECTED: Оновлює товар за ID
   updateItem: (id: string, formData: FormData): Promise<AxiosResponse<IItem>> => {
     return instance.put(`/items/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
 
-  // ✅ CORRECTED: Отримує файл зображення для товару
   getImage: (itemId: string): Promise<AxiosResponse<Blob>> => {
     return instance.get(`/items/${itemId}/image`, { responseType: 'blob' });
   },
-
-  // --- Category & Material API ---
 
   getAllCategories: (): Promise<AxiosResponse<any[]>> => {
     return instance.get(`/get-categories`);
@@ -74,8 +65,6 @@ const mainApi = {
   saveMaterial: (payload: { name: string }): Promise<AxiosResponse<any>> => {
     return instance.post(`/save-material`, payload);
   },
-
-  // --- Auth API ---
 
   login: (credentials: { email: string; password: string }) => {
     return instance.post(`/auth/login`, credentials);

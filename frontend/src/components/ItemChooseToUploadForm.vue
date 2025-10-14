@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-container>
     <v-progress-linear v-if="loading" indeterminate color="primary"></v-progress-linear>
     <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
 
@@ -86,72 +86,41 @@
         <v-chip size="small">{{ item.images.length }} фото</v-chip>
       </template>
     </v-data-table>
-  </div>
+  </v-container> 
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
-  import mainApi from '@/api/main.api'
-  import type { IItem } from '@/interfaces'
-  import router from '@/router'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useProductDataStore } from '@/stores'
+import type { IItem } from '@/interfaces'
+import router from '@/router'
 
-  const headers = [
-    { title: 'Фото', align: 'center' as const, key: 'coverImage', sortable: false },
-    { title: 'Назва', align: 'start' as const, key: 'title', sortable: true },
-    { title: 'Опис', align: 'start' as const, key: 'description', sortable: false, width: '30%' },
-    { title: 'Категорія', align: 'center' as const, key: 'category', sortable: true },
-    { title: 'Ціна', align: 'end' as const, key: 'price', sortable: true },
-    { title: 'Доступно', align: 'center' as const, key: 'amountAvailable', sortable: true },
-    { title: 'Матеріали', align: 'start' as const, key: 'materials', sortable: false },
-  ]
+const productDataStore = useProductDataStore();
+const { items, imageUrls, itemsLoading: loading, itemsError: error } = storeToRefs(productDataStore);
 
-  const items = ref<IItem[]>([])
-  const loading = ref(false)
-  const error = ref<string | null>(null)
-  const imageUrls = ref<Record<string, string>>({})
-
-  onMounted(() => {
-    fetchItems()
-  })
-
-  async function fetchItems() {
-    loading.value = true;
-    error.value = null;
-    try {
-      const response = await mainApi.getAllItems();
-      items.value = response.data;
-      
-      await loadImages()
-    } catch (err: any) {
-      error.value = err.message || 'Помилка завантаження даних';
-      console.error('Error fetching items:', err);
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  async function loadImages() {
-    const imagePromises = items.value.map(async (item) => {
-      try {
-        const response = await mainApi.getImage(item.id);
-        const blob = response.data;
-        imageUrls.value[item.id] = URL.createObjectURL(blob);
-      } catch (err) {
-        console.error(`Error loading image for item ${item.id}:`, err);
-      }
-    });
-    await Promise.all(imagePromises);
-  }
+const headers = [
+  { title: 'Фото', align: 'center' as const, key: 'coverImage', sortable: false },
+  { title: 'Назва', align: 'start' as const, key: 'title', sortable: true },
+  { title: 'Опис', align: 'start' as const, key: 'description', sortable: false, width: '30%' },
+  { title: 'Категорія', align: 'center' as const, key: 'category', sortable: true },
+  { title: 'Ціна', align: 'end' as const, key: 'price', sortable: true },
+  { title: 'Доступно', align: 'center' as const, key: 'amountAvailable', sortable: true },
+  { title: 'Матеріали', align: 'start' as const, key: 'materials', sortable: false },
+]
+onMounted(() => {
+  productDataStore.fetchItems();
+})
 
 function navigateToCreatePage() {
-  router.replace('/admin/item/new');
+  router.push('/admin/item/new');
 }
 
 function handleRowClick(event: Event, { item }: { item: IItem }) {
-  router.replace(`/admin/item/${item.id}`);
+  router.push(`/admin/item/${item.id}`);
 }
 
-  function formatPrice(value: number): string {
-    return new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(value);
-  }
+function formatPrice(value: number): string {
+  return new Intl.NumberFormat('uk-UA', { style: 'currency', currency: 'UAH' }).format(value);
+}
 </script>

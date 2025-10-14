@@ -1,62 +1,125 @@
 <template>
-  <div class="upload-form">
-    <h2>Upload New Category</h2>
-    <BaseInput
-      v-model="categoryName"
-      label="Category Name"
-      type="text"
-      placeholder="Enter category name"
-    />
-    <BaseButton :disabled="uploading" @click="uploadCategory">
-      Create Category
-    </BaseButton>
-    <div v-if="successMessage" class="upload-message success">{{ successMessage }}</div>
-    <div v-if="errorMessage" class="upload-message error">{{ errorMessage }}</div>
-  </div>
+  <v-container>
+    <v-card>
+      <v-card-title class="d-flex align-center pe-2">
+        <v-icon icon="mdi-tag-multiple"></v-icon> &nbsp;
+        Manage Categories
+      </v-card-title>
+
+      <v-card-text>
+        <v-row>
+          <v-col cols="12" sm="8">
+            <v-text-field
+              v-model="newCategoryName"
+              label="New Category Name"
+              placeholder="Enter category name"
+              variant="outlined"
+              density="compact"
+              hide-details
+            ></v-text-field>
+          </v-col>
+          <v-col cols="12" sm="4">
+            <v-btn
+              :loading="isSavingCategory"
+              :disabled="isSavingCategory"
+              @click="saveNewCategory"
+              color="primary"
+              block
+              prepend-icon="mdi-plus-circle"
+            >
+              Create Category
+            </v-btn>
+          </v-col>
+        </v-row>
+
+        <v-alert
+          v-if="categorySuccessMessage"
+          type="success"
+          closable
+          class="mt-4"
+          :text="categorySuccessMessage"
+          @update:modelValue="categorySuccessMessage = ''"
+        ></v-alert>
+        <v-alert
+          v-if="categoryErrorMessage"
+          type="error"
+          closable
+          class="mt-4"
+          :text="categoryErrorMessage"
+          @update:modelValue="categoryErrorMessage = ''"
+        ></v-alert>
+      </v-card-text>
+
+      <v-divider></v-divider>
+
+      <v-data-table
+        :headers="headers"
+        :items="categories"
+        :loading="isLoading"
+        loading-text="Loading... Please wait"
+        no-data-text="No categories found."
+        items-per-page="10"
+      >
+        <template v-slot:item.actions="{ item }">
+          <v-btn icon="mdi-pencil" variant="text" size="small" color="grey-darken-1" disabled></v-btn>
+          <v-btn icon="mdi-delete" variant="text" size="small" color="red-lighten-1" disabled></v-btn>
+        </template>
+      </v-data-table>
+    </v-card>
+  </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import BaseInput from '@/components/BaseInput.vue';
-import BaseButton from './BaseButton.vue';
-import mainApi from '@/api/main.api';
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
 import { isAxiosError } from 'axios';
+import { useProductDataStore } from '@/stores';
+import mainApi from '@/api/main.api';
+import type { ICategory } from '@/interfaces';
 
-const emit = defineEmits(['uploaded']);
+const productDataStore = useProductDataStore();
+const { categories } = storeToRefs(productDataStore);
+const isLoading = ref(true);
 
-const categoryName = ref('');
-const successMessage = ref('');
-const errorMessage = ref('');
-const uploading = ref(false);
+onMounted(async () => {
+  isLoading.value = true;
+  await productDataStore.fetchCategories();
+  isLoading.value = false;
+});
 
-async function uploadCategory() {
-  if (!categoryName.value || !categoryName.value.trim()) {
-    errorMessage.value = 'Please enter a category name.';
-    successMessage.value = '';
+const headers = ref([
+  { title: 'Name', align: 'start' as const, key: 'name', sortable: true },
+  { title: 'Actions', align: 'end' as const, key: 'actions', sortable: false },
+]);
+
+const newCategoryName = ref('');
+const isSavingCategory = ref(false);
+const categorySuccessMessage = ref('');
+const categoryErrorMessage = ref('');
+
+async function saveNewCategory() {
+  if (!newCategoryName.value.trim()) {
+    categoryErrorMessage.value = 'Category name cannot be empty.';
+    categorySuccessMessage.value = '';
     return;
   }
 
-  successMessage.value = '';
-  errorMessage.value = '';
+  isSavingCategory.value = true;
+  categorySuccessMessage.value = '';
+  categoryErrorMessage.value = '';
 
   try {
-    uploading.value = true;
-    const payload = { name: categoryName.value.trim() };
-
-    const response = await mainApi.saveCategory(payload);
-    const created = response.data;
-
-    successMessage.value = 'Category created successfully.';
-    categoryName.value = '';
-    emit('uploaded', created);
+    const response = await mainApi.saveCategory({ name: newCategoryName.value.trim() });
+    productDataStore.addCategory(response.data as ICategory);
+    categorySuccessMessage.value = 'Category created successfully!';
+    newCategoryName.value = '';
   } catch (err) {
     const message = isAxiosError(err)
-      ? (err.response?.data?.message ?? err.response?.data?.error ?? err.message)
+      ? (err.response?.data?.message ?? err.message)
       : (err as Error)?.message ?? String(err);
-
-    errorMessage.value = message;
+    categoryErrorMessage.value = `Error: ${message}`;
   } finally {
-    uploading.value = false;
+    isSavingCategory.value = false;
   }
 }
 </script>

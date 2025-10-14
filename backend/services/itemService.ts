@@ -82,7 +82,7 @@ class ItemService {
       }
 
       const formData = await body.formData();
-      const file = formData.get("newImages") as File | null;
+      const files = formData.getAll("newImages") as File[];
       const title = formData.get("title") as string;
       const description = formData.get("description") as string;
       const categoryId = formData.get("categoryId") as string | null;
@@ -90,13 +90,14 @@ class ItemService {
       const amountAvailable = Number(formData.get("amountAvailable"));
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
 
-      if (!file) {
+      if (!files || files.length === 0) {
         context.response.status = 400;
-        context.response.body = { error: "Image file is missing." };
+        context.response.body = { error: "At least one image file is required." };
         return;
       }
 
-      const preparedImage: IImage = await ImageService.saveImage(file, description);
+      const imageSavePromises = files.map(file => ImageService.saveImage(file, description));
+      const preparedImages: IImage[] = await Promise.all(imageSavePromises);
 
       const newItemData: IItem = {
         id: globalThis.crypto.randomUUID(),
@@ -106,8 +107,8 @@ class ItemService {
         price: isNaN(price) ? null : price,
         amountAvailable: isNaN(amountAvailable) ? null : amountAvailable,
         materials: materialIds.map(id => ({ id, name: "" })),
-        images: [preparedImage], // Use the prepared image object
-        coverImage: preparedImage.id,
+        images: preparedImages,
+        coverImage: preparedImages.length > 0 ? preparedImages[0].id : '',
       };
 
       const db = new ItemCrud();

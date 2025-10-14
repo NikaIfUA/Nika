@@ -4,9 +4,17 @@
     <h3>Here you can find information about the developers.</h3>
   </div>
 
-  <div class="image-gallery">
+  <div v-if="itemsLoading">
+    <p>Завантаження...</p>
+  </div>
+
+  <div v-else-if="itemsError">
+    <p>Виникла помилка: {{ itemsError }}</p>
+  </div>
+
+  <div v-else class="image-gallery">
     <div v-for="item in items" :key="item.id" class="image-card" @click="openModal(item)">
-      <img :src="mainApi.getImageUrl(item.id)" :alt="item.title || 'NIKA project image'" />
+      <img :src="imageUrls[item.id]" :alt="item.title || 'NIKA project image'" />
       <p v-if="item.title">{{ item.title }}</p>
     </div>
   </div>
@@ -16,24 +24,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { IImage, IItem } from '../interfaces';
-import mainApi from '@/api/main.api';
+import { storeToRefs } from 'pinia'; 
+import type { IItem } from '../interfaces';
+import { useProductDataStore } from '@/stores';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
 
-const items = ref<IItem[]>([]);
-const selectedImage = ref<IImage | null>(null);
-const selectedImageUrl = ref<string>('');
+const productStore = useProductDataStore();
 
-onMounted(async () => {
-  try {
-    const response = await mainApi.getAllItems();
-    items.value = response.data;
-  } catch (error) {
-    console.error("Error fetching items:", error);
-  }
-});
+const { items, imageUrls, itemsLoading, itemsError } = storeToRefs(productStore);
 
 const selectedItemId = ref<string | null>(null);
+
+onMounted(() => {
+  productStore.fetchItems();
+});
 
 function openModal(item: IItem) {
   selectedItemId.value = item.id;
