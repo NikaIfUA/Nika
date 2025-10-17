@@ -6,10 +6,13 @@ const itemRouter = (router: Router) => {
   router.get(`/${API_PREFIX}items`, ItemService.fetchItems);
   router.get(`/${API_PREFIX}items/:id`, ItemService.fetchItemById);
   router.get(`/${API_PREFIX}items/:id/image`, ItemService.fetchItemImage);
+  router.get(`/${API_PREFIX}items/:itemId/images/:imageId`, ItemService.fetchItemImagesById);
 
   router.post(`/${API_PREFIX}items`, ItemService.createItem);
 
-  // TODO: Додати роути для оновлення (PUT /items/:id) та видалення (DELETE /items/:id)
+  router.put(`/${API_PREFIX}items/:id`, ItemService.updateItem);
+
+  router.delete(`/${API_PREFIX}items/:id`, ItemService.deleteItem);
 
   return router;
 };

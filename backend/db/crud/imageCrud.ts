@@ -1,5 +1,5 @@
 import { getDbInstance } from '../connection.ts';
-import { images } from '../schema.ts'; // Assuming 'images' is your Drizzle schema for the images table
+import { images } from '../schema.ts';
 import { eq } from 'npm:drizzle-orm';
 import type { IImage } from '../../Interfaces.ts';
 
@@ -10,26 +10,28 @@ export default class ImageCrud {
     this.db = getDbInstance();
   }
 
-  /**
-   * Maps a database row to an IImage object.
-   */
-  private mapRowToIImage(row: any): IImage {
+  private mapRowToIImage(row: typeof images.$inferSelect): IImage {
     return {
       id: row.id,
       url: row.url,
       description: row.description ?? undefined,
-      resolution: { width: row.width, height: row.height },
+      resolution: {
+        width: row.resolution_width ?? 0,
+        height: row.resolution_height ?? 0
+      },
       mimeType: row.mime_type,
       weight: row.weight ?? null,
     };
   }
 
-  /**
-   * Retrieves a single image by its ID.
-   */
   public async getImageById(id: string): Promise<IImage | undefined> {
     const [row] = await this.db.select().from(images).where(eq(images.id, id)).limit(1);
     return row ? this.mapRowToIImage(row) : undefined;
+  }
+
+  public async getImageRecordById(id: string): Promise<(typeof images.$inferSelect) | undefined> {
+    const [row] = await this.db.select().from(images).where(eq(images.id, id)).limit(1);
+    return row;
   }
 
   public async getAllImages(): Promise<IImage[]> {
@@ -37,22 +39,17 @@ export default class ImageCrud {
     return rows.map(this.mapRowToIImage);
   }
 
-  /**
-   * Inserts a new image record into the database.
-   * This method now correctly accepts an IImage object.
-   */
   public async createImage(imageData: IImage): Promise<IImage> {
     await this.db.insert(images).values({
       id: imageData.id,
       url: imageData.url,
       description: imageData.description,
-      width: imageData.resolution.width,
-      height: imageData.resolution.height,
+      resolution_width: imageData.resolution.width,
+      resolution_height: imageData.resolution.height,
       mime_type: imageData.mimeType,
       weight: imageData.weight,
     });
 
-    // Return the object that was passed in, as it represents the data now in the DB.
     return imageData;
   }
 }

@@ -42,8 +42,9 @@ export default class Database {
         category_id: itemData.category?.id ?? null,
       });
 
-      if (itemData.images && itemData.images.length > 0) {
-        const imageValues = itemData.images.map(img => ({
+      const newImages = itemData.images;
+      if (newImages && newImages.length > 0) {
+        const imageValues = newImages.map(img => ({
           id: img.id,
           url: img.url,
           description: img.description,
@@ -55,21 +56,29 @@ export default class Database {
         }));
         await tx.insert(images).values(imageValues);
 
-        const firstImageId = itemData.images[0].id;
-        if (itemData.materials && itemData.materials.length > 0) {
-
-          const imageMaterialValues = itemData.materials.map(mat => ({
-            id: globalThis.crypto.randomUUID(),
-            image_id: firstImageId,
-            material_id: mat.id,
-          }));
-
-          await tx.insert(imageMaterials).values(imageMaterialValues);
-        }
-
+        const coverImageId = newImages[0].id;
         await tx.update(items)
-          .set({ cover_image_id: firstImageId })
+          .set({ cover_image_id: coverImageId })
           .where(eq(items.id, newItemId));
+
+        const materialIds = itemData.materials?.map(mat => mat.id) ?? [];
+        if (materialIds.length > 0) {
+          const imageMaterialValues: { id: string; image_id: string; material_id: string }[] = [];
+
+          for (const image of newImages) {
+            for (const materialId of materialIds) {
+              imageMaterialValues.push({
+                id: globalThis.crypto.randomUUID(),
+                image_id: image.id,
+                material_id: materialId,
+              });
+            }
+          }
+
+          if (imageMaterialValues.length > 0) {
+            await tx.insert(imageMaterials).values(imageMaterialValues);
+          }
+        }
       }
     });
 
@@ -152,5 +161,21 @@ export default class Database {
 
       return item;
     });
+  }
+
+  public async updateItem(id: string, itemData: Partial<IItem>): Promise<IItem | undefined> {
+    const existingItem = await this.getItemById(id);
+    if (!existingItem) {
+      return undefined;
+    }
+
+    const updatedItem = { ...existingItem, ...itemData };
+    await this.db.update(items).set(updatedItem).where(eq(items.id, id));
+    return this.getItemById(id);
+  }
+
+  public async deleteItem(id: string): Promise<boolean> {
+    const deleteResult = await this.db.delete(items).where(eq(items.id, id));
+    return deleteResult > 0;
   }
 }

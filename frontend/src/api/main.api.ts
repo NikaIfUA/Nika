@@ -46,8 +46,16 @@ const mainApi = {
     });
   },
 
+  deleteItem: (id: string): Promise<AxiosResponse<{ message: string }>> => {
+    return instance.delete(`/items/${id}`);
+  },
+
   getImage: (itemId: string): Promise<AxiosResponse<Blob>> => {
     return instance.get(`/items/${itemId}/image`, { responseType: 'blob' });
+  },
+
+  getImageUrl: (itemId: string): string => {
+    return `${API_URL}/items/${itemId}/image`;
   },
 
   getAllCategories: (): Promise<AxiosResponse<any[]>> => {
@@ -80,10 +88,6 @@ const mainApi = {
 
   checkAuth: () => {
     return instance.get(`/auth/check`);
-  },
-
-  getImageUrl: (itemId: string): string => {
-    return `${API_URL}/items/${itemId}/image`;
   },
 };
 

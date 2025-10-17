@@ -120,6 +120,7 @@
     <v-card-actions class="pa-0 mt-6">
       <v-spacer />
       <v-btn variant="text" @click="$emit('cancel')">Відмінити</v-btn>
+      <v-btn color="red-darken-4" variant="flat" @click="handleDelete">Видалити</v-btn>
       <v-btn color="primary" variant="flat" @click="handleSubmit">{{ isEditMode ? 'Оновити' : 'Зберегти' }}</v-btn>
     </v-card-actions>
   </v-card>
@@ -144,7 +145,7 @@ const props = defineProps<{ apiUrl?: string }>();
 const apiUrl = props.apiUrl ?? API_URL;
 
 const emit = defineEmits<{
-  (e: 'saved', payload: IItem): void;
+  (e: 'saved', payload: IItem | null): void;
   (e: 'cancel'): void;
 }>();
 
@@ -203,7 +204,7 @@ async function fetchItemData() {
     itemData.materialIds = item.materials?.map(m => m.id) || []; 
 
     existingImages.value = item.images || [];
-    imagePreviews.value = item.images.map(img => `${apiUrl}/items/${item.id}/image`);
+    imagePreviews.value = item.images.map(img => `${API_URL}/items/${item.id}/images/${img.id}`);
 
   } catch (error) {
     console.error("Failed to fetch item data:", error);
@@ -306,6 +307,22 @@ async function handleSubmit() {
   } catch (error) {
     console.error('Failed to save item:', error);
     alert('Не вдалося зберегти товар. Спробуйте ще раз.');
+  }
+}
+
+async function handleDelete() {
+  if (!isEditMode.value || !itemId.value) return;
+
+  if (!confirm('Ви впевнені, що хочете видалити цей товар? Цю дію не можна буде скасувати.')) {
+    return;
+  }
+
+  try {
+    await mainApi.deleteItem(itemId.value);
+    emit('saved', null);
+  } catch (error) {
+    console.error('Failed to delete item:', error);
+    alert('Не вдалося видалити товар. Спробуйте ще раз.');
   }
 }
 </script>
