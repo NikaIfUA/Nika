@@ -1,5 +1,5 @@
 import { RouterContext } from '../dependencies.ts';
-import { createMaterial, getMaterials } from '../db/crud/materialCrud.ts';
+import { createMaterial, deleteMaterial, getMaterials, updateMaterial } from '../db/crud/materialCrud.ts';
 
 class MaterialService {
   public static async saveMaterial({ request, response }: RouterContext<string>): Promise<void> {
@@ -44,8 +44,8 @@ class MaterialService {
 
   public static async getMaterials({ response }: RouterContext<string>): Promise<void> {
     try {
-  const materials = await getMaterials();
-  response.body = materials;
+    const materials = await getMaterials();
+    response.body = materials;
     } catch (err) {
       console.log(err);
       const errorMessage = (err instanceof Error) ? err.message : String(err);
@@ -56,6 +56,58 @@ class MaterialService {
       }
       response.status = 500;
       response.body = { error: "Internal Server Error", message: errorMessage };
+    }
+  }
+
+  public static async updateMaterial({ params, request, response }: RouterContext<string>): Promise<void> {
+    try {
+      const materialId = params.id;
+      const body = request.body;
+      const { name } = await body.json();
+
+      if (!name || !name.trim()) {
+        response.status = 400;
+        response.body = { error: "Material name is required" };
+        return;
+      }
+
+      // FIX: Pass name.trim() directly as a string, not an object
+      const updatedMaterial = await updateMaterial(materialId, name.trim());
+
+      if (!updatedMaterial) {
+        response.status = 404;
+        response.body = { error: "Material not found" };
+        return;
+      }
+
+      response.status = 200;
+      response.body = updatedMaterial;
+
+    } catch (err) {
+      console.error('updateMaterial error:', err);
+      response.status = 500;
+      response.body = { error: 'Unable to update material' };
+    }
+  }
+
+  public static async deleteMaterial({ params, response }: RouterContext<string>): Promise<void> {
+    try {
+      const materialId = params.id;
+
+      const success = await deleteMaterial(materialId);
+
+      if (success) {
+        response.status = 404;
+        response.body = { error: 'Material not found' };
+        return;
+      }
+
+      response.status = 204;
+
+    } catch (err) {
+      console.error('deleteMaterial error:', err);
+      response.status = 500;
+      response.body = { error: 'Unable to delete material' };
     }
   }
 }

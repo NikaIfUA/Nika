@@ -4,45 +4,47 @@
     <h3>Here you can find information about the developers.</h3>
   </div>
 
-  <!-- temporary image gallery -->
-  <div class="image-gallery">
-      <div v-for="image in images" :key="image.id" class="image-card" @click="openImage(image)">
-        <img :src="imageUrls[image.id]" :alt="image.title || 'NIKA project image'" />
-        <p v-if="image.title">{{ image.title }}</p>
-      </div>
+  <div v-if="itemsLoading">
+    <p>Завантаження...</p>
   </div>
 
-  <ImageDetailsModal v-if="selectedImage" :image="selectedImage" :imageUrl="imageUrls[selectedImage.id]" @close="selectedImage = null" />
+  <div v-else-if="itemsError">
+    <p>Виникла помилка: {{ itemsError }}</p>
+  </div>
+
+  <div v-else class="image-gallery">
+    <div v-for="item in items" :key="item.id" class="image-card" @click="openModal(item)">
+      <img :src="imageUrls[item.id]" :alt="item.title || 'NIKA project image'" />
+      <p v-if="item.title">{{ item.title }}</p>
+    </div>
+  </div>
+
+  <ImageDetailsModal v-if="selectedItemId" :itemId="selectedItemId" @close="closeModal" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
-import type { IImage } from '../interfaces.ts';
-import mainApi from '@/api/main.api.ts';
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia'; 
+import type { IItem } from '../interfaces';
+import { useProductDataStore } from '@/stores';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
 
-const images = ref<(IImage & { data: Record<string, number>; mimeType: string })[]>([]);
-const selectedImage = ref<IImage | null>(null);
-const imageUrls = reactive<Record<string, string>>({});
+const productStore = useProductDataStore();
 
-onMounted(async () => {
-  try {
-    const response = await mainApi.getAllImages();
-    images.value = response.data as (IImage & { data: Record<string, number>; mimeType: string })[];
+const { items, imageUrls, itemsLoading, itemsError } = storeToRefs(productStore);
 
-    for (const img of images.value) {
-      const imageBytes = new Uint8Array(Object.values(img.data));
-      const blob = new Blob([imageBytes], { type: img.mimeType });
-      imageUrls[img.id] = URL.createObjectURL(blob);
-    }
+const selectedItemId = ref<string | null>(null);
 
-  } catch (error) {
-    console.error("Error fetching images:", error);
-  }
+onMounted(() => {
+  productStore.fetchItems();
 });
 
-function openImage(img: IImage) {
-  selectedImage.value = img;
+function openModal(item: IItem) {
+  selectedItemId.value = item.id;
+}
+
+function closeModal() {
+  selectedItemId.value = null;
 }
 </script>
 
@@ -77,6 +79,7 @@ h3 {
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease-in-out;
+  cursor: pointer;
 }
 
 .image-card:hover {
@@ -95,13 +98,6 @@ h3 {
   font-weight: 500;
   color: #333;
 }
-
-.loading-message {
-    text-align: center;
-    margin-top: 2rem;
-    color: #888;
-}
-
 
 @media (min-width: 1024px) {
   .greetings h1,
