@@ -33,6 +33,28 @@ export const useProductDataStore = defineStore('productData', () => {
     }
   }
 
+  function updateMaterial(updatedMaterial: IMaterial) {
+    const index = materials.value.findIndex(m => m.id === updatedMaterial.id);
+    if (index !== -1) {
+      materials.value[index] = updatedMaterial;
+    }
+  }
+
+  function removeMaterial(materialId: string | number) {
+    materials.value = materials.value.filter(m => m.id !== materialId);
+  }
+
+  function updateCategory(updatedCategory: ICategory) {
+    const index = categories.value.findIndex(c => c.id === updatedCategory.id);
+    if (index !== -1) {
+      categories.value[index] = updatedCategory;
+    }
+  }
+
+  function removeCategory(categoryId: string | number) {
+    categories.value = categories.value.filter(c => c.id !== categoryId);
+  }
+
   function getItemById(id: string): IItem | undefined {
     return items.value.find(item => item.id === id);
   }
@@ -125,6 +147,13 @@ export const useProductDataStore = defineStore('productData', () => {
     addMaterial,
     addItem,
     updateItem,
-    loadAllItemImages
+    loadAllItemImages,
+    getItemById,
+    updateMaterial,
+    removeMaterial,
+    updateItemInState,
+    createItem,
+    updateCategory,
+    removeCategory,
   }
 })

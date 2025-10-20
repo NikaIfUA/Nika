@@ -1,6 +1,6 @@
 import { API_URL } from '@/env';
 import axios, { type AxiosResponse } from 'axios';
-import type { IImage, IItem } from '@/interfaces';
+import type { IImage, IItem, IMaterial } from '@/interfaces';
 
 const instance = axios.create({ baseURL: API_URL });
 
@@ -54,8 +54,8 @@ const mainApi = {
     return instance.get(`/items/${itemId}/image`, { responseType: 'blob' });
   },
 
-  getImageUrl: (itemId: string): string => {
-    return `${API_URL}/items/${itemId}/image`;
+  getAllImages: (itemId: string, imageId: string): Promise<AxiosResponse<Blob>> => {
+    return instance.get(`/items/${itemId}/images/${imageId}`, { responseType: 'blob' });
   },
 
   getAllCategories: (): Promise<AxiosResponse<any[]>> => {
@@ -66,12 +66,28 @@ const mainApi = {
     return instance.post(`/save-category`, payload);
   },
 
-  getAllMaterials: (): Promise<AxiosResponse<any[]>> => {
+  updateCategory: (id: string, payload: { name: string }): Promise<AxiosResponse<any>> => {
+    return instance.put(`/categories/${id}`, payload);
+  },
+  
+  deleteCategory: (id: string): Promise<AxiosResponse<void>> => {
+    return instance.delete(`/categories/${id}`);
+  },
+
+  getAllMaterials: (): Promise<AxiosResponse<IMaterial[]>> => {
     return instance.get(`/get-materials`);
   },
 
-  saveMaterial: (payload: { name: string }): Promise<AxiosResponse<any>> => {
+  saveMaterial: (payload: { name: string }): Promise<AxiosResponse<IMaterial>> => {
     return instance.post(`/save-material`, payload);
+  },
+
+  updateMaterial(id: string, data: { name: string }): Promise<AxiosResponse<IMaterial>> {
+    return instance.put(`/materials/${id}`, data);
+  },
+
+  deleteMaterial(id: string): Promise<AxiosResponse<void>> {
+    return instance.delete(`/materials/${id}`);
   },
 
   login: (credentials: { email: string; password: string }) => {
