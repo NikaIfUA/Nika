@@ -8,6 +8,7 @@ export interface IItem {
   materials?: IMaterial[] | null;
   images: IImage[];
   coverImage: string; //id of main image
+  isUnique: boolean;
 }
 
 export interface IImage {

@@ -44,6 +44,14 @@
       <template v-slot:item.title="{ item }">
         <strong>{{ item.title }}</strong>
       </template>
+      
+      <template v-slot:item.isUnique="{ item }">
+        <v-tooltip v-if="item.isUnique" location="top" text="Унікальний товар">
+          <template v-slot:activator="{ props }">
+            <v-icon v-bind="props" color="amber">mdi-star</v-icon>
+          </template>
+        </v-tooltip>
+      </template>
 
       <template v-slot:item.category="{ item }">
         <v-chip v-if="item.category" size="small" color="primary">
@@ -81,10 +89,6 @@
         </div>
         <span v-else class="text-grey">—</span>
       </template>
-
-      <template v-slot:item.images="{ item }">
-        <v-chip size="small">{{ item.images.length }} фото</v-chip>
-      </template>
     </v-data-table>
   </v-container> 
 </template>
@@ -102,12 +106,14 @@ const { items, imageUrls, itemsLoading: loading, itemsError: error } = storeToRe
 const headers = [
   { title: 'Фото', align: 'center' as const, key: 'coverImage', sortable: false },
   { title: 'Назва', align: 'start' as const, key: 'title', sortable: true },
+  { title: 'Тип', align: 'center' as const, key: 'isUnique', sortable: true },
   { title: 'Опис', align: 'start' as const, key: 'description', sortable: false, width: '30%' },
   { title: 'Категорія', align: 'center' as const, key: 'category', sortable: true },
   { title: 'Ціна', align: 'end' as const, key: 'price', sortable: true },
   { title: 'Доступно', align: 'center' as const, key: 'amountAvailable', sortable: true },
   { title: 'Матеріали', align: 'start' as const, key: 'materials', sortable: false },
 ]
+
 onMounted(() => {
   productDataStore.fetchItems();
 })

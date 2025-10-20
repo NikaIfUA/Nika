@@ -71,6 +71,7 @@ class ItemService {
     }
   }
 
+
   public static async createItem(context: RouterContext<string>): Promise<void> {
     try {
       const body = context.request.body;
@@ -88,6 +89,7 @@ class ItemService {
       const price = Number(formData.get("price"));
       const amountAvailable = Number(formData.get("amountAvailable"));
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
+      const isUnique = formData.get("isUnique") === 'true';
 
       if (!files || files.length === 0) {
         context.response.status = 400;
@@ -108,6 +110,7 @@ class ItemService {
         materials: materialIds.map(id => ({ id, name: "" })),
         images: preparedImages,
         coverImage: preparedImages.length > 0 ? preparedImages[0].id : '',
+        isUnique: isUnique,
       };
 
       const db = new ItemCrud();
@@ -169,6 +172,14 @@ class ItemService {
         return;
       }
 
+      const db = new ItemCrud();
+      const existingItem = await db.getItemById(itemId);
+      if (!existingItem) {
+        context.response.status = 404;
+        context.response.body = { error: "Item not found." };
+        return;
+      }
+
       const formData = await body.formData();
       const files = formData.getAll("newImages") as File[];
       const title = formData.get("title") as string;
@@ -178,15 +189,8 @@ class ItemService {
       const amountAvailable = Number(formData.get("amountAvailable"));
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
       const existingImageIds: string[] = JSON.parse(formData.get("existingImageIds") as string || '[]');
-
-      const db = new ItemCrud();
-      const existingItem = await db.getItemById(itemId);
-
-      if (!existingItem) {
-        context.response.status = 404;
-        context.response.body = { error: "Item not found." };
-        return;
-      }
+      const isUniqueStr = formData.get("isUnique") as string | null;
+      const isUnique = isUniqueStr !== null ? isUniqueStr === 'true' : existingItem.isUnique;
 
       let preparedImages: IImage[] = [];
       if (files && files.length > 0) {
@@ -200,10 +204,11 @@ class ItemService {
         description: description || existingItem.description,
         category: categoryId ? { id: categoryId, name: "" } : existingItem.category,
         price: isNaN(price) ? existingItem.price : price,
-        amountAvailable: isNaN(amountAvailable) ? existingItem.amountAvailable : amountAvailable,
+        amountAvailable: amountAvailable,
         materials: materialIds.length > 0 ? materialIds.map(id => ({ id, name: "" })) : existingItem.materials,
         images: [...(existingItem.images.filter(img => existingImageIds.includes(img.id))), ...preparedImages],
         coverImage: existingItem.coverImage,
+        isUnique: isUnique,
       };
 
       const savedItem = await db.updateItem(itemId, updatedItemData);

@@ -66,6 +66,8 @@
           type="number"
           prefix="₴"
           variant="outlined"
+          :disabled="itemData.isUnique"
+          :readonly="itemData.isUnique"
         />
       </v-col>
       <v-col cols="12">
@@ -85,14 +87,27 @@
           variant="outlined"
         />
       </v-col>
+
       <v-col cols="12" md="6">
         <v-text-field
           v-model.number="itemData.amountAvailable"
           label="Кількість в наявності"
           type="number"
           variant="outlined"
+          :disabled="itemData.isUnique"
+          :readonly="itemData.isUnique"
         />
       </v-col>
+      <v-col cols="12" md="6">
+        <v-switch
+          v-model="itemData.isUnique"
+          color="primary"
+          label="Персоналізований товар"
+          inset
+          hide-details
+        />
+      </v-col>
+      
       <v-col cols="12">
         <v-select
           v-model="itemData.materialIds"
@@ -119,8 +134,8 @@
 
     <v-card-actions class="pa-0 mt-6">
       <v-spacer />
-      <v-btn variant="text" @click="$emit('cancel')">Відмінити</v-btn>
-      <v-btn color="red-darken-4" variant="flat" @click="handleDelete">Видалити</v-btn>
+      <v-btn variant="text" @click="router.push('/admin/items')">Відмінити</v-btn>
+      <v-btn v-if="isEditMode" color="red-darken-4" variant="flat" @click="handleDelete">Видалити</v-btn>
       <v-btn color="primary" variant="flat" @click="handleSubmit">{{ isEditMode ? 'Оновити' : 'Зберегти' }}</v-btn>
     </v-card-actions>
   </v-card>
@@ -128,9 +143,9 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import type { IItem, IImage } from '@/interfaces';
+import type { IImage } from '@/interfaces';
 import mainApi from '@/api/main.api';
 import { API_URL } from '@/env';
 import { useProductDataStore } from '@/stores';
@@ -139,15 +154,9 @@ const productDataStore = useProductDataStore();
 const { categories, materials } = storeToRefs(productDataStore);
 
 const route = useRoute();
+const router = useRouter();
 const itemId = computed(() => route.params.id as string | undefined);
 const isEditMode = computed(() => !!itemId.value && itemId.value !== 'new');
-const props = defineProps<{ apiUrl?: string }>();
-const apiUrl = props.apiUrl ?? API_URL;
-
-const emit = defineEmits<{
-  (e: 'saved', payload: IItem | null): void;
-  (e: 'cancel'): void;
-}>();
 
 const itemData = reactive({
   title: '',
@@ -156,15 +165,22 @@ const itemData = reactive({
   price: null as number | null,
   amountAvailable: null as number | null,
   materialIds: [] as string[],
+  isUnique: false,
 });
 
 const newFiles = ref<File[]>([]);
 const imagePreviews = ref<string[]>([]);
 const existingImages = ref<IImage[]>([]);
-const imagesToDelete = ref<string[]>([]);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedPreviewIndex = ref<number | null>(null);
+
+watch(() => itemData.isUnique, (isNowUnique) => {
+  if (isNowUnique) {
+    itemData.price = null;
+    itemData.amountAvailable = null;
+  }
+});
 
 function resetState() {
   Object.assign(itemData, {
@@ -174,12 +190,12 @@ function resetState() {
     price: null,
     amountAvailable: null,
     materialIds: [],
+    isUnique: false,
   });
   
   newFiles.value = [];
   imagePreviews.value = [];
   existingImages.value = [];
-  imagesToDelete.value = [];
   
   selectedPreviewIndex.value = null;
   
@@ -193,8 +209,7 @@ async function fetchItemData() {
   resetState();
 
   try {
-    const response = await mainApi.getItemById(itemId.value);
-    const item = response.data;
+    const item = await mainApi.getItemById(itemId.value).then(res => res.data);
     
     itemData.title = item.title;
     itemData.description = item.description || '';
@@ -202,32 +217,30 @@ async function fetchItemData() {
     itemData.amountAvailable = item.amountAvailable ?? null;
     itemData.categoryId = item.category?.id || null; 
     itemData.materialIds = item.materials?.map(m => m.id) || []; 
+    itemData.isUnique = item.isUnique;
 
     existingImages.value = item.images || [];
     imagePreviews.value = item.images.map(img => `${API_URL}/items/${item.id}/images/${img.id}`);
 
   } catch (error) {
     console.error("Failed to fetch item data:", error);
+    router.push('/admin/items');
   }
 }
 
-onMounted(async () => {
-    await productDataStore.fetchInitialData();
-    
+onMounted(async () => {  
     if (isEditMode.value) {
         await fetchItemData();
     }
 });
 
-watch(() => route.params.id, (newId, oldId) => {
-  if (newId !== oldId) {
-    if (newId && newId !== 'new') {
-      fetchItemData();
-    } else {
-      resetState();
-    }
+watch(() => route.params.id, (newId) => {
+  if (newId && newId !== 'new') {
+    fetchItemData();
+  } else {
+    resetState();
   }
-});
+}, { immediate: true });
 
 
 function triggerFileInput() {
@@ -257,10 +270,6 @@ function deleteSelectedImage() {
   const numExistingImages = existingImages.value.length;
 
   if (index < numExistingImages) {
-    const imageToDelete = existingImages.value[index];
-    if(imageToDelete?.id) {
-      imagesToDelete.value.push(imageToDelete.id);
-    }
     existingImages.value.splice(index, 1);
   } else {
     const newFileIndex = index - numExistingImages;
@@ -271,7 +280,6 @@ function deleteSelectedImage() {
   imagePreviews.value.splice(index, 1);
   selectedPreviewIndex.value = null;
 }
-
 
 async function handleSubmit() {
   if (imagePreviews.value.length === 0) {
@@ -287,23 +295,24 @@ async function handleSubmit() {
   if (itemData.price !== null) formData.append('price', String(itemData.price));
   if (itemData.amountAvailable !== null) formData.append('amountAvailable', String(itemData.amountAvailable));
   formData.append('materialIds', JSON.stringify(itemData.materialIds));
+  formData.append('isUnique', String(itemData.isUnique));
 
   newFiles.value.forEach(file => {
     formData.append('newImages', file);
   });
   
   if (isEditMode.value) {
-    formData.append('imagesToDelete', JSON.stringify(imagesToDelete.value));
+    const existingImageIds = existingImages.value.map(img => img.id);
+    formData.append('existingImageIds', JSON.stringify(existingImageIds));
   }
 
   try {
-    let response;
     if (isEditMode.value && itemId.value) {
-      response = await mainApi.updateItem(itemId.value, formData);
+      await productDataStore.updateItem(itemId.value, formData);
     } else {
-      response = await mainApi.createItem(formData);
+      await productDataStore.createItem(formData);
     }
-    emit('saved', response.data);
+    await router.push('/admin/items');
   } catch (error) {
     console.error('Failed to save item:', error);
     alert('Не вдалося зберегти товар. Спробуйте ще раз.');
@@ -318,8 +327,8 @@ async function handleDelete() {
   }
 
   try {
-    await mainApi.deleteItem(itemId.value);
-    emit('saved', null);
+    await productDataStore.deleteItem(itemId.value);
+    await router.push('/admin/items');
   } catch (error) {
     console.error('Failed to delete item:', error);
     alert('Не вдалося видалити товар. Спробуйте ще раз.');

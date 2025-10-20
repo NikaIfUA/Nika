@@ -1,7 +1,7 @@
 import { getDbInstance } from '../connection.ts';
 import { items, images, categories, materials, imageMaterials } from '../schema.ts';
 import * as schema from '../schema.ts';
-import { eq, inArray } from 'npm:drizzle-orm';
+import { eq, inArray, and } from 'npm:drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { IItem, ICategory, IMaterial, IImage } from '../../Interfaces.ts';
 
@@ -40,6 +40,7 @@ export default class Database {
         price: itemData.price,
         amount_available: itemData.amountAvailable,
         category_id: itemData.category?.id ?? null,
+        isUnique: itemData.isUnique,
       });
 
       const newImages = itemData.images;
@@ -64,7 +65,6 @@ export default class Database {
         const materialIds = itemData.materials?.map(mat => mat.id) ?? [];
         if (materialIds.length > 0) {
           const imageMaterialValues: { id: string; image_id: string; material_id: string }[] = [];
-
           for (const image of newImages) {
             for (const materialId of materialIds) {
               imageMaterialValues.push({
@@ -74,7 +74,6 @@ export default class Database {
               });
             }
           }
-
           if (imageMaterialValues.length > 0) {
             await tx.insert(imageMaterials).values(imageMaterialValues);
           }
@@ -130,8 +129,7 @@ export default class Database {
 
       const itemImages: IImage[] = itemImageRecords.map(imgRecord => {
         (materialsByImageId.get(imgRecord.id) || []).forEach(mat => {
-          const materialObject: IMaterial = { id: mat.id, name: mat.name };
-          allMaterialsForItem.set(mat.id, materialObject);
+          allMaterialsForItem.set(mat.id, { id: mat.id, name: mat.name });
         });
 
         return {
@@ -157,25 +155,81 @@ export default class Database {
         images: itemImages,
         category: category,
         materials: Array.from(allMaterialsForItem.values()),
+        isUnique: row.isUnique,
       };
 
       return item;
     });
   }
 
-  public async updateItem(id: string, itemData: Partial<IItem>): Promise<IItem | undefined> {
-    const existingItem = await this.getItemById(id);
-    if (!existingItem) {
-      return undefined;
-    }
+  public async updateItem(id: string, itemData: IItem): Promise<IItem | undefined> {
+    await this.db.transaction(async (tx) => {
+      await tx.update(items).set({
+        title: itemData.title,
+        description: itemData.description,
+        price: itemData.price,
+        amount_available: itemData.amountAvailable,
+        category_id: itemData.category?.id ?? null,
+        isUnique: itemData.isUnique,
+        updated_at: new Date(),
+      }).where(eq(items.id, id));
 
-    const updatedItem = { ...existingItem, ...itemData };
-    await this.db.update(items).set(updatedItem).where(eq(items.id, id));
+      const existingImages = await tx.select({ id: images.id }).from(images).where(eq(images.item_id, id));
+      const existingImageIds = existingImages.map(img => img.id);
+      const newImageIds = itemData.images.map(img => img.id);
+
+      const imagesToDelete = existingImageIds.filter(imgId => !newImageIds.includes(imgId));
+      const imagesToAdd = itemData.images.filter(img => !existingImageIds.includes(img.id));
+
+      if (imagesToDelete.length > 0) {
+        await tx.delete(images).where(and(eq(images.item_id, id), inArray(images.id, imagesToDelete)));
+      }
+
+      if (imagesToAdd.length > 0) {
+        const imageValues = imagesToAdd.map(img => ({
+          id: img.id,
+          url: img.url,
+          description: img.description,
+          resolution_width: img.resolution.width,
+          resolution_height: img.resolution.height,
+          mime_type: img.mimeType,
+          weight: img.weight,
+          item_id: id,
+        }));
+        await tx.insert(images).values(imageValues);
+      }
+
+      const allCurrentImageIds = newImageIds;
+      if (allCurrentImageIds.length > 0) {
+        await tx.delete(imageMaterials).where(inArray(imageMaterials.image_id, allCurrentImageIds));
+
+        const materialIds = itemData.materials?.map(mat => mat.id) ?? [];
+        if (materialIds.length > 0) {
+          const imageMaterialValues: { id: string; image_id: string; material_id: string }[] = [];
+          for (const imageId of allCurrentImageIds) {
+            for (const materialId of materialIds) {
+              imageMaterialValues.push({
+                id: globalThis.crypto.randomUUID(),
+                image_id: imageId,
+                material_id: materialId,
+              });
+            }
+          }
+          if (imageMaterialValues.length > 0) {
+            await tx.insert(imageMaterials).values(imageMaterialValues);
+          }
+        }
+      }
+
+      const newCoverImage = itemData.images.length > 0 ? itemData.images[0].id : null;
+      await tx.update(items).set({ cover_image_id: newCoverImage }).where(eq(items.id, id));
+    });
+
     return this.getItemById(id);
   }
 
   public async deleteItem(id: string): Promise<boolean> {
-    const deleteResult = await this.db.delete(items).where(eq(items.id, id));
-    return deleteResult > 0;
+    const result = await this.db.delete(items).where(eq(items.id, id));
+    return result.rowCount > 0;
   }
 }

@@ -17,6 +17,7 @@ export const items = table('items', {
   price: t.integer('price'),
   amount_available: t.integer('amount_available'),
   cover_image_id: t.varchar('cover_image_id', { length: 50 }), // nullable by default
+  isUnique: t.boolean('is_unique').default(false).notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });

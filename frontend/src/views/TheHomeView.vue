@@ -12,26 +12,26 @@
     <p>Виникла помилка: {{ itemsError }}</p>
   </div>
 
-  <div v-else class="image-gallery">
-    <div v-for="item in items" :key="item.id" class="image-card" @click="openModal(item)">
-      <img :src="imageUrls[item.id]" :alt="item.title || 'NIKA project image'" />
-      <p v-if="item.title">{{ item.title }}</p>
-    </div>
-  </div>
+  <GalleryForm
+    v-else
+    :items="items"
+    :image-urls="imageUrls"
+    @item-click="openModal"
+  />
 
   <ImageDetailsModal v-if="selectedItemId" :itemId="selectedItemId" @close="closeModal" />
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { storeToRefs } from 'pinia'; 
+import { storeToRefs } from 'pinia';
 import type { IItem } from '../interfaces';
 import { useProductDataStore } from '@/stores';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
+import GalleryForm from '@/components/GalleryForm.vue';
 
 const productStore = useProductDataStore();
-
-const { items, imageUrls, itemsLoading, itemsError } = storeToRefs(productStore);
+const { portfolioItems: items, imageUrls, itemsLoading, itemsError } = storeToRefs(productStore);
 
 const selectedItemId = ref<string | null>(null);
 
@@ -49,6 +49,7 @@ function closeModal() {
 </script>
 
 <style scoped>
+/* Стилі, що не стосуються галереї, залишаються тут */
 h1 {
   font-weight: 500;
   font-size: 2.6rem;
@@ -63,40 +64,6 @@ h3 {
 .greetings h1,
 .greetings h3 {
   text-align: center;
-}
-.image-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
-  width: 100%;
-}
-
-.image-card {
-  border: 1px solid #eaeaea;
-  border-radius: 8px;
-  overflow: hidden;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out;
-  cursor: pointer;
-}
-
-.image-card:hover {
-    transform: translateY(-5px);
-}
-
-.image-card img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover; 
-}
-
-.image-card p {
-  padding: 0.75rem;
-  margin: 0;
-  font-weight: 500;
-  color: #333;
 }
 
 @media (min-width: 1024px) {
