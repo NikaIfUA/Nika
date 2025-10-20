@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import TheHomeView from '../views/TheHomeView.vue'
-import TheAboutView from '../views/TheAboutView.vue'
+import TheShopView from '../views/TheShopView.vue'
 import TheInfoView from '../views/TheInfoView.vue'
 
 const router = createRouter({
@@ -13,9 +13,9 @@ const router = createRouter({
       component: TheHomeView,
     },
     {
-      path: '/about',
-      name: 'about',
-      component: TheAboutView,
+      path: '/shop',
+      name: 'shop',
+      component: TheShopView,
     },
     {
       path: '/info',
