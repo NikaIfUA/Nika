@@ -5,7 +5,20 @@
 
     <v-toolbar flat class="mb-2">
       <v-toolbar-title>Список товарів</v-toolbar-title>
+
+      <v-select
+        v-model="selectedTypeFilter"
+        :items="typeFilterOptions"
+        label="Фільтр за типом"
+        density="compact"
+        variant="outlined"
+        hide-details
+        style="max-width: 250px;"
+        class="ml-4"
+      ></v-select>
+      
       <v-spacer></v-spacer>
+      
       <v-btn
         color="primary"
         prepend-icon="mdi-plus"
@@ -17,8 +30,7 @@
     
     <v-data-table
       :headers="headers"
-      :items="items"
-      :loading="loading"
+      :items="filteredItems" :loading="loading"
       @click:row="handleRowClick"
       item-value="id"
       class="elevation-1"
@@ -46,10 +58,15 @@
       </template>
       
       <template v-slot:item.isUnique="{ item }">
-        <v-tooltip v-if="item.isUnique" location="top" text="Унікальний товар">
+        <v-tooltip v-if="item.isUnique" location="top" text="Під замовлення">
           <template v-slot:activator="{ props }">
-            <v-icon v-bind="props" color="amber">mdi-star</v-icon>
+            <v-card-text v-bind="props" color="amber" >Під замовлення</v-card-text>
           </template>
+        </v-tooltip>
+        <v-tooltip v-else location="top" text="Поштучно">
+            <template v-slot:activator="{ props }">
+                <v-card-text v-bind="props" color="grey">Поштучно</v-card-text>
+            </template>
         </v-tooltip>
       </template>
 
@@ -94,14 +111,33 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useProductDataStore } from '@/stores'
-import type { IItem } from '@/interfaces'
-import router from '@/router'
+import { ref, computed, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useProductDataStore } from '@/stores';
+import type { IItem } from '@/interfaces';
+import router from '@/router';
 
 const productDataStore = useProductDataStore();
 const { items, imageUrls, itemsLoading: loading, itemsError: error } = storeToRefs(productDataStore);
+
+const selectedTypeFilter = ref('all');
+
+const typeFilterOptions = [
+  { title: 'Всі товари', value: 'all' },
+  { title: 'Під замовлення', value: 'unique' },
+  { title: 'Поштучно', value: 'standard' }
+];
+
+const filteredItems = computed(() => {
+  const selected = selectedTypeFilter.value;
+  if (selected === 'unique') {
+    return productDataStore.portfolioItems;
+  }
+  if (selected === 'standard') {
+    return productDataStore.shopItems;
+  }
+  return items.value;
+});
 
 const headers = [
   { title: 'Фото', align: 'center' as const, key: 'coverImage', sortable: false },
