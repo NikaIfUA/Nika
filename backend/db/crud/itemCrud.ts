@@ -1,5 +1,5 @@
 import { getDbInstance } from '../connection.ts';
-import { items, images, categories, materials, imageMaterials } from '../schema.ts';
+import { items, images, categories, materials, imageMaterials, categoryItems } from '../schema.ts';
 import * as schema from '../schema.ts';
 import { eq, inArray, and } from 'npm:drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -39,9 +39,18 @@ export default class Database {
         description: itemData.description,
         price: itemData.price,
         amount_available: itemData.amountAvailable,
-        category_id: itemData.category?.id ?? null,
         isUnique: itemData.isUnique,
       });
+
+      const newCategories = itemData.categories;
+      if (newCategories && newCategories.length > 0) {
+        const categoryLinks = newCategories.map(cat => ({
+          id: globalThis.crypto.randomUUID(),
+          item_id: newItemId,
+          category_id: cat.id,
+        }));
+        await tx.insert(categoryItems).values(categoryLinks);
+      }
 
       const newImages = itemData.images;
       if (newImages && newImages.length > 0) {
@@ -97,11 +106,24 @@ export default class Database {
       imagesByItemId.set(image.item_id, existing);
     }
 
-    const categoryIds = itemRows.map(it => it.category_id).filter((id): id is string => !!id);
-    const allCategories = categoryIds.length > 0
-      ? await this.db.select().from(categories).where(inArray(categories.id, categoryIds))
+    const categoryRelations = await this.db.select()
+      .from(categoryItems)
+      .where(inArray(categoryItems.item_id, itemIds));
+    const allCategoryIds = [...new Set(categoryRelations.map(rel => rel.category_id))];
+    const allCategories = allCategoryIds.length > 0
+      ? await this.db.select().from(categories).where(inArray(categories.id, allCategoryIds))
       : [];
     const categoriesMap = new Map(allCategories.map(cat => [cat.id, cat]));
+
+    const categoriesByItemId = new Map<string, ICategory[]>();
+    for (const relation of categoryRelations) {
+      const categoryData = categoriesMap.get(relation.category_id);
+      if (categoryData) {
+        const existing = categoriesByItemId.get(relation.item_id) ?? [];
+        existing.push({ id: categoryData.id, name: categoryData.name });
+        categoriesByItemId.set(relation.item_id, existing);
+      }
+    }
 
     const allImageIds = allImagesForItems.map(img => img.id);
     const imageMaterialRelations = allImageIds.length > 0
@@ -142,8 +164,7 @@ export default class Database {
         };
       });
 
-      const categoryRecord = row.category_id ? categoriesMap.get(row.category_id) : null;
-      const category: ICategory | null = categoryRecord ? { id: categoryRecord.id, name: categoryRecord.name } : null;
+      const itemCategories: ICategory[] = categoriesByItemId.get(row.id) || [];
 
       const item: IItem = {
         id: row.id,
@@ -153,7 +174,7 @@ export default class Database {
         amountAvailable: row.amount_available,
         coverImage: row.cover_image_id ?? '',
         images: itemImages,
-        category: category,
+        categories: itemCategories,
         materials: Array.from(allMaterialsForItem.values()),
         isUnique: row.isUnique,
       };
@@ -169,11 +190,22 @@ export default class Database {
         description: itemData.description,
         price: itemData.price,
         amount_available: itemData.amountAvailable,
-        category_id: itemData.category?.id ?? null,
         isUnique: itemData.isUnique,
         updated_at: new Date(),
       }).where(eq(items.id, id));
 
+      await tx.delete(categoryItems).where(eq(categoryItems.item_id, id));
+
+      const newCategories = itemData.categories;
+      if (newCategories && newCategories.length > 0) {
+        const categoryLinks = newCategories.map(cat => ({
+          id: globalThis.crypto.randomUUID(),
+          item_id: id,
+          category_id: cat.id,
+        }));
+        await tx.insert(categoryItems).values(categoryLinks);
+      }
+      
       const existingImages = await tx.select({ id: images.id }).from(images).where(eq(images.item_id, id));
       const existingImageIds = existingImages.map(img => img.id);
       const newImageIds = itemData.images.map(img => img.id);

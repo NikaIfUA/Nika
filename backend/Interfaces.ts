@@ -2,7 +2,7 @@ export interface IItem {
   id: string;
   title: string;
   description?: string | null;
-  category?: ICategory | null;
+  categories?: ICategory[] | null;
   price?: number | null;
   amountAvailable?: number | null;
   materials?: IMaterial[] | null;

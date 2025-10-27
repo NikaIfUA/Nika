@@ -39,7 +39,7 @@
         <div class="meta">
           <h2>{{ item.title }}</h2>
           <p v-if="item.description">{{ item.description }}</p>
-          <p v-if="item.category">Категорія: <strong>{{ item.category.name }}</strong></p>
+          <p v-if="item.categories?.length">Категорія: <strong>{{ item.categories.map(c => c.name).join(', ') }}</strong></p>
           <p v-if="item.price !== null">Ціна: <strong>{{ item.price }}</strong></p>
           <p v-if="item.amountAvailable !== null">Кількість: <strong>{{ item.amountAvailable }}</strong></p>
           <p v-if="item.materials?.length">Матеріали: <strong>{{ item.materials.map(m => m.name).join(', ') }}</strong></p>

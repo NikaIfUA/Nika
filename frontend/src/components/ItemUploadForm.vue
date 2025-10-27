@@ -79,12 +79,15 @@
       </v-col>
       <v-col cols="12" md="6">
         <v-select
-          v-model="itemData.categoryId"
+          v-model="itemData.categoryIds"
           :items="categories"
           item-title="name"
           item-value="id"
-          label="Категорія"
+          label="Категорії"
           variant="outlined"
+          multiple
+          chips
+          closable-chips
         />
       </v-col>
 
@@ -161,7 +164,7 @@ const isEditMode = computed(() => !!itemId.value && itemId.value !== 'new');
 const itemData = reactive({
   title: '',
   description: '',
-  categoryId: null as string | null,
+  categoryIds: [] as string[],
   price: null as number | null,
   amountAvailable: null as number | null,
   materialIds: [] as string[],
@@ -186,7 +189,7 @@ function resetState() {
   Object.assign(itemData, {
     title: '',
     description: '',
-    categoryId: null,
+    categoryIds: [],
     price: null,
     amountAvailable: null,
     materialIds: [],
@@ -215,7 +218,7 @@ async function fetchItemData() {
     itemData.description = item.description || '';
     itemData.price = item.price ?? null;
     itemData.amountAvailable = item.amountAvailable ?? null;
-    itemData.categoryId = item.category?.id || null; 
+    itemData.categoryIds = item.categories?.map(c => c.id) || [];
     itemData.materialIds = item.materials?.map(m => m.id) || []; 
     itemData.isUnique = item.isUnique;
 
@@ -229,6 +232,8 @@ async function fetchItemData() {
 }
 
 onMounted(async () => {  
+  await productDataStore.fetchCategories();
+  await productDataStore.fetchMaterials();
     if (isEditMode.value) {
         await fetchItemData();
     }
@@ -291,9 +296,9 @@ async function handleSubmit() {
   
   formData.append('title', itemData.title || '');
   formData.append('description', itemData.description || '');
-  if (itemData.categoryId) formData.append('categoryId', itemData.categoryId);
   if (itemData.price !== null) formData.append('price', String(itemData.price));
   if (itemData.amountAvailable !== null) formData.append('amountAvailable', String(itemData.amountAvailable));
+  formData.append('categoryIds', JSON.stringify(itemData.categoryIds));
   formData.append('materialIds', JSON.stringify(itemData.materialIds));
   formData.append('isUnique', String(itemData.isUnique));
 

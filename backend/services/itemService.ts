@@ -85,9 +85,9 @@ class ItemService {
       const files = formData.getAll("newImages") as File[];
       const title = formData.get("title") as string;
       const description = formData.get("description") as string;
-      const categoryId = formData.get("categoryId") as string | null;
       const price = Number(formData.get("price"));
       const amountAvailable = Number(formData.get("amountAvailable"));
+      const categoryIds: string[] = JSON.parse(formData.get("categoryIds") as string || '[]');
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
       const isUnique = formData.get("isUnique") === 'true';
 
@@ -104,7 +104,7 @@ class ItemService {
         id: globalThis.crypto.randomUUID(),
         title: title,
         description: description,
-        category: categoryId ? { id: categoryId, name: "" } : null,
+        categories: categoryIds.map(id => ({ id, name: "" })),
         price: isNaN(price) ? null : price,
         amountAvailable: isNaN(amountAvailable) ? null : amountAvailable,
         materials: materialIds.map(id => ({ id, name: "" })),
@@ -184,9 +184,9 @@ class ItemService {
       const files = formData.getAll("newImages") as File[];
       const title = formData.get("title") as string;
       const description = formData.get("description") as string;
-      const categoryId = formData.get("categoryId") as string
       const price = Number(formData.get("price"));
       const amountAvailable = Number(formData.get("amountAvailable"));
+      const categoryIds: string[] = JSON.parse(formData.get("categoryIds") as string || '[]');
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
       const existingImageIds: string[] = JSON.parse(formData.get("existingImageIds") as string || '[]');
       const isUniqueStr = formData.get("isUnique") as string | null;
@@ -202,7 +202,7 @@ class ItemService {
         id: itemId,
         title: title || existingItem.title,
         description: description || existingItem.description,
-        category: categoryId ? { id: categoryId, name: "" } : existingItem.category,
+        categories: categoryIds.map(id => ({ id, name: "" })),
         price: isNaN(price) ? existingItem.price : price,
         amountAvailable: amountAvailable,
         materials: materialIds.length > 0 ? materialIds.map(id => ({ id, name: "" })) : existingItem.materials,

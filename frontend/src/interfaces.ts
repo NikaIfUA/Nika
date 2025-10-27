@@ -2,7 +2,7 @@ export interface IItem {
   id: string;
   title: string;
   description?: string | null;
-  category?: ICategory | null;
+  categories?: ICategory[] | null;
   price?: number | null;
   amountAvailable?: number | null;
   materials?: IMaterial[] | null;
@@ -24,18 +24,19 @@ export interface IImage {
 }
 
 export interface ICategory {
-	id: string;
-	name: string;
+  id: string;
+  name: string;
 }
 
 export interface IMaterial {
-	id: string;
-	name: string;
-	description?: string;
+  id: string;
+  name: string;
+  description?: string;
 }
 
 export interface IUser {
-	id: string;
-	name: string;
-	email: string;
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
 }

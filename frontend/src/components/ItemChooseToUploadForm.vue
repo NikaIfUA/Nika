@@ -60,19 +60,25 @@
       <template v-slot:item.isUnique="{ item }">
         <v-tooltip v-if="item.isUnique" location="top" text="Під замовлення">
           <template v-slot:activator="{ props }">
-            <v-card-text v-bind="props" color="amber" >Під замовлення</v-card-text>
+            <v-icon v-bind="props" color="amber">mdi-star</v-icon>
           </template>
         </v-tooltip>
         <v-tooltip v-else location="top" text="Поштучно">
             <template v-slot:activator="{ props }">
-                <v-card-text v-bind="props" color="grey">Поштучно</v-card-text>
+                <v-icon v-bind="props" color="grey">mdi-star</v-icon>
             </template>
         </v-tooltip>
       </template>
 
-      <template v-slot:item.category="{ item }">
-        <v-chip v-if="item.category" size="small" color="primary">
-          {{ item.category.name }}
+      <template v-slot:item.categories="{ item }">
+        <v-chip v-if="item.categories?.length"
+          v-for="category in item.categories"
+          :key="category.id"
+          size="small" 
+          color="primary"
+          class="mr-1 mb-1"
+        >
+          {{ category.name }}
         </v-chip>
         <span v-else class="text-grey">—</span>
       </template>
@@ -144,7 +150,7 @@ const headers = [
   { title: 'Назва', align: 'start' as const, key: 'title', sortable: true },
   { title: 'Тип', align: 'center' as const, key: 'isUnique', sortable: true },
   { title: 'Опис', align: 'start' as const, key: 'description', sortable: false, width: '30%' },
-  { title: 'Категорія', align: 'center' as const, key: 'category', sortable: true },
+  { title: 'Категорії', align: 'center' as const, key: 'categories', sortable: true },
   { title: 'Ціна', align: 'end' as const, key: 'price', sortable: true },
   { title: 'Доступно', align: 'center' as const, key: 'amountAvailable', sortable: true },
   { title: 'Матеріали', align: 'start' as const, key: 'materials', sortable: false },

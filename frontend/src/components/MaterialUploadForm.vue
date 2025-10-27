@@ -27,13 +27,13 @@
               block
               :prepend-icon="isEditing ? 'mdi-content-save' : 'mdi-plus-circle'"
             >
-              {{ isEditing ? 'Update' : 'Create' }}
+              {{ isEditing ? 'Оновити' : 'Створити' }}
             </v-btn>
             <v-btn
               @click="cancelEdit"
               color="primary"
               variant="text"
-            >Clear</v-btn>
+            >Очистити</v-btn>
           </v-col>
         </v-row>
 
@@ -61,8 +61,8 @@
         :headers="headers"
         :items="materials"
         :loading="isLoading"
-        loading-text="Loading... Please wait"
-        no-data-text="No materials found."
+        loading-text="Завантаження матеріалів..."
+        no-data-text="Матеріали не знайдено."
         items-per-page="10"
         class="clickable-rows"
         @click:row="(_: any, { item }: { item: IMaterial }) => handleRowClick(item)"
@@ -73,28 +73,28 @@
             size="small"
             color="grey-darken-1"
             @click.stop="handleRowClick(item)"
-          >Edit</v-btn>
+          >Редагувати</v-btn>
           <v-btn
             variant="text"
             size="small"
             color="red-lighten-1"
             @click.stop="promptDelete(item)"
-          >Delete</v-btn>
+          >Видалити</v-btn>
         </template>
       </v-data-table>
     </v-card>
 
     <v-dialog v-model="isDeleteDialogOpen" max-width="500px">
       <v-card>
-        <v-card-title class="headline">Confirm Deletion</v-card-title>
+        <v-card-title class="headline">Підтвердження видалення</v-card-title>
         <v-card-text>
-          Are you sure you want to delete the material
-          <strong>"{{ materialToDelete?.name }}"</strong>? This action cannot be undone.
+          Ви впевнені, що хочете видалити матеріал
+          <strong>"{{ materialToDelete?.name }}"</strong>? Цю дію не можна скасувати.
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="isDeleteDialogOpen = false">Cancel</v-btn>
-          <v-btn color="red darken-1" text @click="confirmDelete" :loading="isDeleting">Delete</v-btn>
+          <v-btn text @click="isDeleteDialogOpen = false">Скасувати</v-btn>
+          <v-btn color="red darken-1" text @click="confirmDelete" :loading="isDeleting">Видалити</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -120,8 +120,8 @@ onMounted(async () => {
 });
 
 const headers = ref([
-  { title: 'Name', align: 'start' as const, key: 'name', sortable: true },
-  { title: 'Actions', align: 'end' as const, key: 'actions', sortable: false },
+  { title: 'Назва', align: 'start' as const, key: 'name', sortable: true },
+  { title: 'Дії', align: 'end' as const, key: 'actions', sortable: false },
 ]);
 
 const materialName = ref('');
@@ -131,9 +131,9 @@ const successMessage = ref('');
 const errorMessage = ref('');
 
 const isEditing = computed(() => !!editingMaterial.value);
-const cardTitle = computed(() => isEditing.value ? `Edit Material: ${editingMaterial.value?.name}` : 'Manage Materials');
-const textFieldLabel = computed(() => isEditing.value ? 'New Material Name' : 'New Material Name');
-const textFieldPlaceholder = computed(() => isEditing.value ? 'Enter the new name' : 'Enter material name');
+const cardTitle = computed(() => isEditing.value ? `Редагувати матеріал: ${editingMaterial.value?.name}` : 'Управління матеріалами');
+const textFieldLabel = computed(() => isEditing.value ? 'Нова назва матеріалу' : 'Назва матеріалу');
+const textFieldPlaceholder = computed(() => isEditing.value ? 'Введіть нову назву' : 'Введіть назву матеріалу');
 
 // --- State for Delete ---
 const isDeleteDialogOpen = ref(false);
@@ -154,7 +154,7 @@ function cancelEdit() {
 
 async function saveMaterial() {
   if (!materialName.value.trim()) {
-    errorMessage.value = 'Material name cannot be empty.';
+    errorMessage.value = 'Назва матеріалу не може бути порожньою.';
     successMessage.value = '';
     return;
   }
@@ -167,18 +167,18 @@ async function saveMaterial() {
     if (isEditing.value && editingMaterial.value) {
       const response = await mainApi.updateMaterial(editingMaterial.value.id, { name: materialName.value.trim() });
       productDataStore.updateMaterial(response.data as IMaterial);
-      successMessage.value = 'Material updated successfully!';
+      successMessage.value = 'Матеріал успішно оновлено!';
     } else {
       const response = await mainApi.saveMaterial({ name: materialName.value.trim() });
       productDataStore.addMaterial(response.data as IMaterial);
-      successMessage.value = 'Material created successfully!';
+      successMessage.value = 'Матеріал успішно створено!';
     }
     cancelEdit();
   } catch (err) {
     const message = isAxiosError(err)
       ? (err.response?.data?.message ?? err.message)
       : (err as Error)?.message ?? String(err);
-    errorMessage.value = `Error: ${message}`;
+    errorMessage.value = `Помилка: ${message}`;
   } finally {
     isSaving.value = false;
   }
@@ -199,12 +199,12 @@ async function confirmDelete() {
   try {
     await mainApi.deleteMaterial(materialToDelete.value.id);
     productDataStore.removeMaterial(materialToDelete.value.id);
-    successMessage.value = `Material "${materialToDelete.value.name}" deleted successfully.`;
+    successMessage.value = `Матеріал "${materialToDelete.value.name}" успішно видалено.`;
   } catch (err) {
       const message = isAxiosError(err)
       ? (err.response?.data?.message ?? err.message)
       : (err as Error)?.message ?? String(err);
-    errorMessage.value = `Error: ${message}`;
+    errorMessage.value = `Помилка: ${message}`;
   } finally {
     isDeleting.value = false;
     isDeleteDialogOpen.value = false;
