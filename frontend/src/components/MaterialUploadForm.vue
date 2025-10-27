@@ -73,32 +73,25 @@
             size="small"
             color="grey-darken-1"
             @click.stop="handleRowClick(item)"
-          >Редагувати</v-btn>
+          ><v-icon>mdi-pencil</v-icon></v-btn>
           <v-btn
             variant="text"
             size="small"
             color="red-lighten-1"
             @click.stop="promptDelete(item)"
-          >Видалити</v-btn>
+          ><v-icon>mdi-delete</v-icon></v-btn>
         </template>
       </v-data-table>
     </v-card>
 
-    <v-dialog v-model="isDeleteDialogOpen" max-width="500px">
-      <v-card>
-        <v-card-title class="headline">Підтвердження видалення</v-card-title>
-        <v-card-text>
-          Ви впевнені, що хочете видалити матеріал
-          <strong>"{{ materialToDelete?.name }}"</strong>? Цю дію не можна скасувати.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn text @click="isDeleteDialogOpen = false">Скасувати</v-btn>
-          <v-btn color="red darken-1" text @click="confirmDelete" :loading="isDeleting">Видалити</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-container>
+    <ConfirmDeleteDialog
+      v-model="isDeleteDialogOpen"
+      :item-name="materialToDelete?.name || ''"
+      item-type-name="матеріал"
+      :loading="isDeleting"
+      @confirm="confirmDelete"
+    />
+    </v-container>
 </template>
 
 <script setup lang="ts">
@@ -108,6 +101,7 @@ import { isAxiosError } from 'axios';
 import { useProductDataStore } from '@/stores';
 import mainApi from '@/api/main.api';
 import type { IMaterial } from '@/interfaces';
+import ConfirmDeleteDialog from './ConfirmDeleteForm.vue';
 
 const productDataStore = useProductDataStore();
 const { materials } = storeToRefs(productDataStore);
@@ -131,7 +125,7 @@ const successMessage = ref('');
 const errorMessage = ref('');
 
 const isEditing = computed(() => !!editingMaterial.value);
-const cardTitle = computed(() => isEditing.value ? `Редагувати матеріал: ${editingMaterial.value?.name}` : 'Управління матеріалами');
+const cardTitle = computed(() => isEditing.value ? `Редагувати матеріал: ${editingMaterial.value?.name}` : 'Матеріали');
 const textFieldLabel = computed(() => isEditing.value ? 'Нова назва матеріалу' : 'Назва матеріалу');
 const textFieldPlaceholder = computed(() => isEditing.value ? 'Введіть нову назву' : 'Введіть назву матеріалу');
 

@@ -142,6 +142,14 @@
       <v-btn color="primary" variant="flat" @click="handleSubmit">{{ isEditMode ? 'Оновити' : 'Зберегти' }}</v-btn>
     </v-card-actions>
   </v-card>
+
+    <ConfirmDeleteDialog
+    v-model="isDeleteDialogOpen"
+    :item-name="itemData.title"
+    item-type-name="товар"
+    :loading="isDeleting"
+    @confirm="confirmItemDelete"
+  />
 </template>
 
 <script setup lang="ts">
@@ -152,6 +160,7 @@ import type { IImage } from '@/interfaces';
 import mainApi from '@/api/main.api';
 import { API_URL } from '@/env';
 import { useProductDataStore } from '@/stores';
+import ConfirmDeleteDialog from '@/components/ConfirmDeleteForm.vue';
 
 const productDataStore = useProductDataStore();
 const { categories, materials } = storeToRefs(productDataStore);
@@ -177,6 +186,9 @@ const existingImages = ref<IImage[]>([]);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const selectedPreviewIndex = ref<number | null>(null);
+
+const isDeleteDialogOpen = ref(false);
+const isDeleting = ref(false);
 
 watch(() => itemData.isUnique, (isNowUnique) => {
   if (isNowUnique) {
@@ -317,19 +329,22 @@ async function handleSubmit() {
     } else {
       await productDataStore.createItem(formData);
     }
-    await router.push('/admin/items');
+    await router.push('/admin');
   } catch (error) {
     console.error('Failed to save item:', error);
     alert('Не вдалося зберегти товар. Спробуйте ще раз.');
   }
 }
 
-async function handleDelete() {
+function handleDelete() {
+  if (!isEditMode.value || !itemId.value) return;
+  isDeleteDialogOpen.value = true;
+}
+
+async function confirmItemDelete() {
   if (!isEditMode.value || !itemId.value) return;
 
-  if (!confirm('Ви впевнені, що хочете видалити цей товар? Цю дію не можна буде скасувати.')) {
-    return;
-  }
+  isDeleting.value = true;
 
   try {
     await productDataStore.deleteItem(itemId.value);
@@ -337,6 +352,9 @@ async function handleDelete() {
   } catch (error) {
     console.error('Failed to delete item:', error);
     alert('Не вдалося видалити товар. Спробуйте ще раз.');
+  } finally {
+    isDeleting.value = false;
+    isDeleteDialogOpen.value = false;
   }
 }
 </script>

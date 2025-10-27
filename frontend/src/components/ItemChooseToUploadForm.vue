@@ -84,20 +84,21 @@
       </template>
 
       <template v-slot:item.price="{ item }">
-        <span v-if="item.price != null">{{ formatPrice(item.price) }}</span>
+        <span v-if="item.price != null && item.price > 0">{{ formatPrice(item.price) }}</span>
         <span v-else class="text-grey">—</span>
       </template>
 
       <template v-slot:item.amountAvailable="{ item }">
-        <v-chip 
-          v-if="item.amountAvailable != null" 
-          :color="item.amountAvailable > 0 ? 'success' : 'error'"
-          size="small"
-        >
-          {{ item.amountAvailable }}
-        </v-chip>
-        <span v-else class="text-grey">—</span>
-      </template>
+      <v-chip 
+        v-if="item.amountAvailable != null && item.amountAvailable > 0" 
+        color="success"
+        size="small"
+      >
+        {{ item.amountAvailable }}
+      </v-chip>
+      
+      <span v-else class="text-grey">—</span>
+    </template>
 
       <template v-slot:item.materials="{ item }">
         <div v-if="item.materials && item.materials.length > 0" class="py-1">
