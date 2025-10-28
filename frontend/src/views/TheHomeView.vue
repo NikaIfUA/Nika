@@ -1,7 +1,8 @@
 <template>
-  <div class="greetings">
-    <h1>Welcome to the NIKA project!</h1>
-    <h3>Here you can find information about the developers.</h3>
+  <div class="shop-page">
+  <div class="header">
+    <h1>З увагою до деталей</h1>
+    <h3>Майстерня реклами NIKA</h3>
   </div>
 
   <div v-if="itemsLoading">
@@ -18,7 +19,7 @@
     :image-urls="imageUrls"
     @item-click="openModal"
   />
-
+  </div>
   <ImageDetailsModal v-if="selectedItemId" :itemId="selectedItemId" @close="closeModal" />
 </template>
 
@@ -49,27 +50,24 @@ function closeModal() {
 </script>
 
 <style scoped>
-/* Стилі, що не стосуються галереї, залишаються тут */
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-h3 {
-  font-size: 1.2rem;
-}
-
-.greetings h1,
-.greetings h3 {
+.header h1,
+.header h3 {
   text-align: center;
+  margin: 0;
 }
 
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    text-align: left;
-  }
+.shop-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
 }
 </style>
