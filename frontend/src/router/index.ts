@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import TheHomeView from '../views/TheHomeView.vue'
 import TheShopView from '../views/TheShopView.vue'
-import TheInfoView from '../views/TheInfoView.vue'
+import TheContactsView from '../views/TheContactsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,9 +18,9 @@ const router = createRouter({
       component: TheShopView,
     },
     {
-      path: '/info',
-      name: 'info',
-      component: TheInfoView,
+      path: '/contacts',
+      name: 'contacts',
+      component: TheContactsView,
     },
     {
       path: '/admin',
