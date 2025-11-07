@@ -34,7 +34,6 @@
       <GalleryForm
         v-if="currentView === 'gallery'"
         :items="items"
-        :image-urls="imageUrls"
         @item-click="openModal"
       />
       

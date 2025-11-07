@@ -104,11 +104,25 @@ class ImageService {
       await Deno.writeFile(filePath, fileContent);
       console.log(`Image saved to ${filePath}`);
 
+      let width = 0;
+      let height = 0;
+      try {
+        const { imageSize } = await import("image-size");
+        const dimensions = imageSize(fileContent);
+        if (dimensions.width && dimensions.height) {
+          width = dimensions.width;
+          height = dimensions.height;
+          console.log(`Image dimensions: ${width}x${height}`);
+        }
+      } catch (error) {
+        console.error("Error getting image dimensions:", error);
+      }
+
       const newImageData: IImage = {
         id: globalThis.crypto.randomUUID(), // Generate ID here
         url: filePath,
         description: description,
-        resolution: { width: 0, height: 0 },
+        resolution: { width, height },
         mimeType: file.type,
         weight: file.size,
       };

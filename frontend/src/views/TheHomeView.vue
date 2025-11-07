@@ -16,7 +16,6 @@
   <GalleryForm
     v-else
     :items="items"
-    :image-urls="imageUrls"
     @item-click="openModal"
   />
   </div>
