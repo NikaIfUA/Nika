@@ -98,18 +98,18 @@
 import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { isAxiosError } from 'axios';
-import { useProductDataStore } from '@/stores';
+import { useCategoriesStore } from '@/stores';
 import mainApi from '@/api/main.api';
 import type { ICategory } from '@/interfaces';
 import ConfirmDeleteDialog from './ConfirmDeleteForm.vue';
 
-const productDataStore = useProductDataStore();
-const { categories } = storeToRefs(productDataStore);
+const categoriesStore = useCategoriesStore();
+const { categories } = storeToRefs(categoriesStore);
 const isLoading = ref(true);
 
 onMounted(async () => {
   isLoading.value = true;
-  await productDataStore.fetchCategories();
+  await categoriesStore.fetchCategories();
   isLoading.value = false;
 });
 
@@ -160,11 +160,11 @@ async function saveCategory() {
   try {
     if (isEditing.value && editingCategory.value) {
       const response = await mainApi.updateCategory(editingCategory.value.id, { name: categoryName.value.trim() });
-      productDataStore.updateCategory(response.data as ICategory);
+      categoriesStore.updateCategory(response.data as ICategory);
       successMessage.value = 'Category updated successfully!';
     } else {
       const response = await mainApi.saveCategory({ name: categoryName.value.trim() });
-      productDataStore.addCategory(response.data as ICategory);
+      categoriesStore.addCategory(response.data as ICategory);
       successMessage.value = 'Category created successfully!';
     }
     cancelEdit();
@@ -192,7 +192,7 @@ async function confirmDelete() {
   
   try {
     await mainApi.deleteCategory(categoryToDelete.value.id);
-    productDataStore.removeCategory(categoryToDelete.value.id);
+    categoriesStore.removeCategory(categoryToDelete.value.id);
     successMessage.value = `Category "${categoryToDelete.value.name}" deleted successfully.`;
   } catch (err) {
       const message = isAxiosError(err)

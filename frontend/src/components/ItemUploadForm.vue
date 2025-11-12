@@ -159,11 +159,14 @@ import { storeToRefs } from 'pinia';
 import type { IImage } from '@/interfaces';
 import mainApi from '@/api/main.api';
 import { API_URL } from '@/env';
-import { useProductDataStore } from '@/stores';
+import { useCategoriesStore, useMaterialsStore, useItemsStore } from '@/stores';
 import ConfirmDeleteDialog from '@/components/ConfirmDeleteForm.vue';
 
-const productDataStore = useProductDataStore();
-const { categories, materials } = storeToRefs(productDataStore);
+const categoriesStore = useCategoriesStore();
+const materialsStore = useMaterialsStore();
+const itemsStore = useItemsStore();
+const { categories } = storeToRefs(categoriesStore);
+const { materials } = storeToRefs(materialsStore);
 
 const route = useRoute();
 const router = useRouter();
@@ -244,8 +247,8 @@ async function fetchItemData() {
 }
 
 onMounted(async () => {  
-  await productDataStore.fetchCategories();
-  await productDataStore.fetchMaterials();
+  await categoriesStore.fetchCategories();
+  await materialsStore.fetchMaterials();
     if (isEditMode.value) {
         await fetchItemData();
     }
@@ -325,9 +328,9 @@ async function handleSubmit() {
 
   try {
     if (isEditMode.value && itemId.value) {
-      await productDataStore.updateItem(itemId.value, formData);
+      await itemsStore.updateItem(itemId.value, formData);
     } else {
-      await productDataStore.createItem(formData);
+      await itemsStore.createItem(formData);
     }
     await router.push('/admin');
   } catch (error) {
@@ -347,7 +350,7 @@ async function confirmItemDelete() {
   isDeleting.value = true;
 
   try {
-    await productDataStore.deleteItem(itemId.value);
+    await itemsStore.deleteItem(itemId.value);
     await router.push('/admin/items');
   } catch (error) {
     console.error('Failed to delete item:', error);

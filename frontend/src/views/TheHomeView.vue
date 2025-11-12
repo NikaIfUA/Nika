@@ -26,17 +26,17 @@
 import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import type { IItem } from '../interfaces';
-import { useProductDataStore } from '@/stores';
+import { useItemsStore } from '@/stores';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
 import GalleryForm from '@/components/GalleryForm.vue';
 
-const productStore = useProductDataStore();
-const { portfolioItems: items, imageUrls, itemsLoading, itemsError } = storeToRefs(productStore);
+const itemsStore = useItemsStore();
+const { portfolioItems: items, imageUrls, itemsLoading, itemsError } = storeToRefs(itemsStore);
 
 const selectedItemId = ref<string | null>(null);
 
 onMounted(() => {
-  productStore.fetchItems();
+  itemsStore.fetchItems();
 });
 
 function openModal(item: IItem) {

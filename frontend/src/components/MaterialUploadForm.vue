@@ -98,18 +98,18 @@
 import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import { isAxiosError } from 'axios';
-import { useProductDataStore } from '@/stores';
+import { useMaterialsStore } from '@/stores';
 import mainApi from '@/api/main.api';
 import type { IMaterial } from '@/interfaces';
 import ConfirmDeleteDialog from './ConfirmDeleteForm.vue';
 
-const productDataStore = useProductDataStore();
-const { materials } = storeToRefs(productDataStore);
+const materialsStore = useMaterialsStore();
+const { materials } = storeToRefs(materialsStore);
 const isLoading = ref(true);
 
 onMounted(async () => {
   isLoading.value = true;
-  await productDataStore.fetchMaterials();
+  await materialsStore.fetchMaterials();
   isLoading.value = false;
 });
 
@@ -160,11 +160,11 @@ async function saveMaterial() {
   try {
     if (isEditing.value && editingMaterial.value) {
       const response = await mainApi.updateMaterial(editingMaterial.value.id, { name: materialName.value.trim() });
-      productDataStore.updateMaterial(response.data as IMaterial);
+      materialsStore.updateMaterial(response.data as IMaterial);
       successMessage.value = 'Матеріал успішно оновлено!';
     } else {
       const response = await mainApi.saveMaterial({ name: materialName.value.trim() });
-      productDataStore.addMaterial(response.data as IMaterial);
+      materialsStore.addMaterial(response.data as IMaterial);
       successMessage.value = 'Матеріал успішно створено!';
     }
     cancelEdit();
@@ -192,7 +192,7 @@ async function confirmDelete() {
   
   try {
     await mainApi.deleteMaterial(materialToDelete.value.id);
-    productDataStore.removeMaterial(materialToDelete.value.id);
+    materialsStore.removeMaterial(materialToDelete.value.id);
     successMessage.value = `Матеріал "${materialToDelete.value.name}" успішно видалено.`;
   } catch (err) {
       const message = isAxiosError(err)

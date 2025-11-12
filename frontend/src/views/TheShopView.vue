@@ -61,20 +61,20 @@
 import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import type { IItem } from '../interfaces';
-import { useProductDataStore } from '@/stores';
+import { useItemsStore } from '@/stores';
 import GalleryForm from '@/components/GalleryForm.vue';
 import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
 import ItemsDataTable from '@/components/ItemsDataTable.vue';
 
 const currentView = ref<'gallery' | 'table'>('gallery');
 
-const productStore = useProductDataStore();
-const { shopItems: items, imageUrls, itemsLoading, itemsError } = storeToRefs(productStore);
+const itemsStore = useItemsStore();
+const { shopItems: items, imageUrls, itemsLoading, itemsError } = storeToRefs(itemsStore);
 
 const selectedItemId = ref<string | null>(null);
 
 onMounted(() => {
-  productStore.fetchItems();
+  itemsStore.fetchItems();
 });
 
 function openModal(item: IItem) {

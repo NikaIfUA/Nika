@@ -14,17 +14,17 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useProductDataStore } from '@/stores';
+import { useItemsStore } from '@/stores';
 import type { IItem } from '@/interfaces';
 import router from '@/router';
 import ItemsDataTable from '@/components/ItemsDataTable.vue'; // Використовуємо наш новий компонент
 
-const productDataStore = useProductDataStore();
+const itemsStore = useItemsStore();
 // Тут ми беремо *всі* товари, а не тільки shopItems
-const { items, imageUrls, itemsLoading: loading, itemsError: error } = storeToRefs(productDataStore);
+const { items, imageUrls, itemsLoading: loading, itemsError: error } = storeToRefs(itemsStore);
 
 onMounted(() => {
-  productDataStore.fetchItems();
+  itemsStore.fetchItems();
 });
 
 function navigateToCreatePage() {
