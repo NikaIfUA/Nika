@@ -105,6 +105,10 @@ const mainApi = {
   checkAuth: () => {
     return instance.get(`/auth/check`);
   },
+
+  sendContactMessage: (data: { subject: string; description: string; email: string; source: string }) => {
+    return instance.post(`/contact`, data);
+  },
 };
 
 export default mainApi;

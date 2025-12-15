@@ -1,5 +1,6 @@
 import { Router } from '../dependencies.ts';
 import categoryRoutes from "./categoryRoutes.ts";
+import contactRoutes from "./contactRoutes.ts";
 import imageRoutes from './imageRoutes.ts';
 import itemRouter from "./itemRoutes.ts";
 import mainRoutes from './mainRoutes.ts';
@@ -14,5 +15,6 @@ mainRoutes(router);
 usersRoutes(router);
 categoryRoutes(router);
 materialRoutes(router);
+contactRoutes(router);
 
 export default router;

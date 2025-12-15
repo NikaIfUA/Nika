@@ -17,6 +17,11 @@
           referrerpolicy="no-referrer-when-downgrade"></iframe>
       </v-responsive>
     </section>
+    <!-- Контактна форма -->
+    <section class="mb-8">
+      <h2 class="text-h5 font-weight-medium text-center mb-4">Напишіть нам</h2>
+      <ContactForm />
+    </section>
   </v-container>
   
     <section>
@@ -29,7 +34,7 @@
                 Наша адреса
               </v-card-title>
               <v-card-text class="text-medium-emphasis">
-                <p><strong>NIKA</strong></p>
+                <p><strong>Майстерня реклами NIKA</strong></p>
                 <p>Україна, м. Калуш</p>
                 <p>вул. Грушевського, 15</p>
                 <p>тел. 067 764 89 19, 066 724 92 84</p>
@@ -67,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import ContactForm from '@/components/ContactForm.vue';
 </script>
 
 <style scoped>
