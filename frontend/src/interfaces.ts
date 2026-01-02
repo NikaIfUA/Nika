@@ -1,27 +1,42 @@
-export interface IImage {
+export interface IItem {
   id: string;
-  url: string;
   title: string;
-  description?: string;
-  category?: ICategory | null;
+  description?: string | null;
+  categories?: ICategory[] | null;
   price?: number | null;
   amountAvailable?: number | null;
   materials?: IMaterial[] | null;
+  images: IImage[];
+  coverImage: string; //id of main image
+  isUnique: boolean;
+}
+
+export interface IImage {
+  id: string;
+  url: string;
+  description?: string;
+  resolution: {
+    width: number;
+    height: number;
+  };
+  mimeType: string;
+  weight?: number | null;
 }
 
 export interface ICategory {
-	id: string;
-	name: string;
+  id: string;
+  name: string;
 }
 
 export interface IMaterial {
-	id: string;
-	name: string;
-	description?: string;
+  id: string;
+  name: string;
+  description?: string;
 }
 
 export interface IUser {
-	id: string;
-	name: string;
-	email: string;
+  id: string;
+  name: string;
+  email: string;
+  passwordHash: string;
 }

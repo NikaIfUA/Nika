@@ -1,6 +1,6 @@
 import { API_URL } from '@/env';
 import axios, { type AxiosResponse } from 'axios';
-import type { IImage } from '@/interfaces';
+import type { IImage, IItem, IMaterial } from '@/interfaces';
 
 const instance = axios.create({ baseURL: API_URL });
 
@@ -26,56 +26,89 @@ instance.interceptors.request.use(async (config) => {
 
 
 const mainApi = {
-  getFileContent: async (fileName: string): Promise<AxiosResponse<string>> => {
-    return await instance.get(`/get-file-content/${fileName}`);
+  getAllItems: (): Promise<AxiosResponse<IItem[]>> => {
+    return instance.get('/items');
   },
 
-  getInfo: async (): Promise<AxiosResponse<string>> => {
-    return await instance.get(`/get-info`);
+  getItemById: (id: string): Promise<AxiosResponse<IItem>> => {
+    return instance.get(`/items/${id}`);
   },
 
-  getAllImages: async (): Promise<AxiosResponse<IImage[]>> => {
-    return await instance.get(`/get-all-images`);
+  createItem: (formData: FormData): Promise<AxiosResponse<IItem>> => {
+    return instance.post('/items', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
-  getImageById: async (id: string): Promise<AxiosResponse<Blob>> => {
-    return await instance.get(`/get-image-by-id/${id}`, { responseType: 'blob' });
+  updateItem: (id: string, formData: FormData): Promise<AxiosResponse<IItem>> => {
+    return instance.put(`/items/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
-  getAllCategories: async (): Promise<AxiosResponse<any[]>> => {
-    return await instance.get(`/get-categories`);
+  deleteItem: (id: string): Promise<AxiosResponse<{ message: string }>> => {
+    return instance.delete(`/items/${id}`);
   },
 
-  saveCategory: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${API_URL}/save-category`, payload);
+  getImage: (itemId: string): Promise<AxiosResponse<Blob>> => {
+    return instance.get(`/items/${itemId}/image`, { responseType: 'blob' });
   },
 
-  saveMaterial: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${API_URL}/save-material`, payload);
+  getAllImages: (itemId: string, imageId: string): Promise<AxiosResponse<Blob>> => {
+    return instance.get(`/items/${itemId}/images/${imageId}`, { responseType: 'blob' });
   },
 
-  getAllMaterials: async (): Promise<AxiosResponse<any[]>> => {
-    return await instance.get(`/get-materials`);
+  getAllCategories: (): Promise<AxiosResponse<any[]>> => {
+    return instance.get(`/get-categories`);
   },
 
-  login: async (credentials: { email: string; password: string }) => {
-    return await instance.post(`/auth/login`, credentials)
+  saveCategory: (payload: { name: string }): Promise<AxiosResponse<any>> => {
+    return instance.post(`/save-category`, payload);
+  },
+
+  updateCategory: (id: string, payload: { name: string }): Promise<AxiosResponse<any>> => {
+    return instance.put(`/categories/${id}`, payload);
   },
   
-  register: async (data: { name: string; email: string; password: string }) => {
-    return await instance.post(`/auth/register`, data)
+  deleteCategory: (id: string): Promise<AxiosResponse<void>> => {
+    return instance.delete(`/categories/${id}`);
   },
 
-  logout: async () => {
-    return await instance.post(`/auth/logout`)
+  getAllMaterials: (): Promise<AxiosResponse<IMaterial[]>> => {
+    return instance.get(`/get-materials`);
   },
 
-  saveImage: async (formData: FormData): Promise<AxiosResponse<any>> => {
-    // Let browser/axios set multipart Content-Type with proper boundary automatically
-    return await axios.post(`${API_URL}/save-image`, formData);
+  saveMaterial: (payload: { name: string }): Promise<AxiosResponse<IMaterial>> => {
+    return instance.post(`/save-material`, payload);
   },
 
-  checkAuth: async () => { return await instance.get(`/auth/check`) },
+  updateMaterial(id: string, data: { name: string }): Promise<AxiosResponse<IMaterial>> {
+    return instance.put(`/materials/${id}`, data);
+  },
+
+  deleteMaterial(id: string): Promise<AxiosResponse<void>> {
+    return instance.delete(`/materials/${id}`);
+  },
+
+  login: (credentials: { email: string; password: string }) => {
+    return instance.post(`/auth/login`, credentials);
+  },
+
+  register: (data: { name: string; email: string; password: string }) => {
+    return instance.post(`/auth/register`, data);
+  },
+
+  logout: () => {
+    return instance.post(`/auth/logout`);
+  },
+
+  checkAuth: () => {
+    return instance.get(`/auth/check`);
+  },
+
+  sendContactMessage: (data: { subject: string; description: string; email: string; source: string }) => {
+    return instance.post(`/contact`, data);
+  },
 };
 
 export default mainApi;

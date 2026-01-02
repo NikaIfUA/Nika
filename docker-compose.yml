@@ -54,7 +54,12 @@ services:
       - .env
     networks:
       - nika-network
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
 networks:
   nika-network:
     driver: bridge
+
+volumes:
+  pgdata:

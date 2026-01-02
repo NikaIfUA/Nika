@@ -1,6 +1,6 @@
 import { create, verify } from "../dependencies.ts";
-import { IUser } from "../interfaces.ts";
-import { Database } from '../db/crud.ts';
+import { IUser } from "../Interfaces.ts";
+import { Database } from '../db/crud/userCrud.ts';
 
 const JWT_SECRET_KEY = Deno.env.get("JWT_SECRET_KEY") || "your-secret-key";
 

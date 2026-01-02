@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import TheHomeView from '../views/TheHomeView.vue'
-import TheAboutView from '../views/TheAboutView.vue'
-import TheInfoView from '../views/TheInfoView.vue'
+import TheShopView from '../views/TheShopView.vue'
+import TheContactsView from '../views/TheContactsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,14 +13,14 @@ const router = createRouter({
       component: TheHomeView,
     },
     {
-      path: '/about',
-      name: 'about',
-      component: TheAboutView,
+      path: '/shop',
+      name: 'shop',
+      component: TheShopView,
     },
     {
-      path: '/info',
-      name: 'info',
-      component: TheInfoView,
+      path: '/contacts',
+      name: 'contacts',
+      component: TheContactsView,
     },
     {
       path: '/admin',
@@ -28,9 +28,14 @@ const router = createRouter({
       component: () => import('../views/TheAdminView.vue'),
     },
     {
-      path: '/admin/image',
-      name: 'uploadImage',
-      component: () => import('../components/ImageUploadForm.vue'),
+      path: '/admin/item/new',
+      name: 'uploadItem',
+      component: () => import('../components/ItemUploadForm.vue'),
+    },
+    {
+      path: '/admin/item/:id',
+      name: 'editItem',
+      component: () => import('../components/ItemUploadForm.vue'),
     },
     {
       path: '/admin/category',
@@ -46,6 +51,11 @@ const router = createRouter({
       path: '/auth',
       name: 'auth',
       component: () => import('../views/TheAuthView.vue'),
+    },
+    {
+      path: '/admin/items',
+      name: 'items',
+      component: () => import('../components/ItemChooseToUploadForm.vue'),
     }
   ],
 })
