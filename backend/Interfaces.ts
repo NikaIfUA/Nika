@@ -26,12 +26,25 @@ export interface IImage {
 export interface ICategory {
   id: string;
   name: string;
+  slug: string;
+  description?: string;
+  image?: IImage | null;
 }
 
 export interface IMaterial {
   id: string;
   name: string;
+  slug: string;
   description?: string;
+  image?: IImage | null;
+}
+
+export interface ITechnology {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: IImage | null;
 }
 
 export interface IUser {
