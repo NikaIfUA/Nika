@@ -23,6 +23,16 @@ const router = createRouter({
       component: TheContactsView,
     },
     {
+      path: '/info',
+      name: 'info',
+      component: () => import('../views/TheInfoView.vue'),
+    },
+    {
+      path: '/info/:type/:slug',
+      name: 'infoDetails',
+      component: () => import('../views/TheInfoDetailsView.vue'),
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('../views/TheAdminView.vue'),
@@ -46,6 +56,41 @@ const router = createRouter({
       path: '/admin/material',
       name: 'uploadMaterial',
       component: () => import('../components/MaterialUploadForm.vue'),
+    },
+    {
+      path: '/admin/technology',
+      name: 'uploadTechnology',
+      component: () => import('../components/TechnologyUploadForm.vue'),
+    },
+    {
+      path: '/admin/materials',
+      name: 'materials',
+      component: () => import('../components/MaterialUploadForm.vue'),
+    },
+    {
+      path: '/admin/materials/add',
+      name: 'addMaterial',
+      component: () => import('../components/MaterialAddForm.vue'),
+    },
+    {
+      path: '/admin/materials/:id',
+      name: 'editMaterial',
+      component: () => import('../components/MaterialAddForm.vue'),
+    },
+    {
+      path: '/admin/technologies',
+      name: 'technologies',
+      component: () => import('../components/TechnologyUploadForm.vue'),
+    },
+    {
+      path: '/admin/technologies/add',
+      name: 'addTechnology',
+      component: () => import('../components/TechnologyAddForm.vue'),
+    },
+    {
+      path: '/admin/technologies/:id',
+      name: 'editTechnology',
+      component: () => import('../components/TechnologyAddForm.vue'),
     },
     {
       path: '/auth',

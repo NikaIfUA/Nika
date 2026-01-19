@@ -17,6 +17,11 @@
         <v-icon start icon="mdi-texture-box"></v-icon>
         Матеріали
       </v-tab>
+      
+      <v-tab value="technology">
+        <v-icon start icon="mdi-lightning-bolt"></v-icon>
+        Технології
+      </v-tab>
 
       <v-spacer></v-spacer>
     </v-tabs>
@@ -25,6 +30,7 @@
       <ItemChooseToUploadForm v-show="activeTab === 'items'" />
       <CategoryUploadForm v-show="activeTab === 'category'" />
       <MaterialUploadForm v-show="activeTab === 'material'" />
+      <TechnologyUploadForm v-show="activeTab === 'technology'" />
     </v-container>
   </div>
 </template>
@@ -35,6 +41,7 @@ import { ref } from 'vue';
 import ItemChooseToUploadForm from '@/components/ItemChooseToUploadForm.vue';
 import CategoryUploadForm from '@/components/CategoryUploadForm.vue';
 import MaterialUploadForm from '@/components/MaterialUploadForm.vue';
+import TechnologyUploadForm from '@/components/TechnologyUploadForm.vue';
 
 const activeTab = ref('items');
 </script>

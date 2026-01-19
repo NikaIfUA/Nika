@@ -1,6 +1,6 @@
 import { API_URL } from '@/env';
 import axios, { type AxiosResponse } from 'axios';
-import type { IImage, IItem, IMaterial } from '@/interfaces';
+import type { IImage, IItem, IMaterial, ITechnology } from '@/interfaces';
 
 const instance = axios.create({ baseURL: API_URL });
 
@@ -62,11 +62,11 @@ const mainApi = {
     return instance.get(`/get-categories`);
   },
 
-  saveCategory: (payload: { name: string }): Promise<AxiosResponse<any>> => {
+  saveCategory: (payload: { name: string; description?: string }): Promise<AxiosResponse<any>> => {
     return instance.post(`/save-category`, payload);
   },
 
-  updateCategory: (id: string, payload: { name: string }): Promise<AxiosResponse<any>> => {
+  updateCategory: (id: string, payload: { name: string; description?: string }): Promise<AxiosResponse<any>> => {
     return instance.put(`/categories/${id}`, payload);
   },
   
@@ -78,16 +78,40 @@ const mainApi = {
     return instance.get(`/get-materials`);
   },
 
-  saveMaterial: (payload: { name: string }): Promise<AxiosResponse<IMaterial>> => {
-    return instance.post(`/save-material`, payload);
+  saveMaterial: (payload: FormData | { name: string; description?: string }): Promise<AxiosResponse<IMaterial>> => {
+    const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.post(`/save-material`, payload, config);
   },
 
-  updateMaterial(id: string, data: { name: string }): Promise<AxiosResponse<IMaterial>> {
-    return instance.put(`/materials/${id}`, data);
+  updateMaterial(id: string, data: FormData | { name: string; description?: string }): Promise<AxiosResponse<IMaterial>> {
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.put(`/materials/${id}`, data, config);
   },
 
   deleteMaterial(id: string): Promise<AxiosResponse<void>> {
     return instance.delete(`/materials/${id}`);
+  },
+
+  getAllTechnologies: (): Promise<AxiosResponse<ITechnology[]>> => {
+    return instance.get(`/get-technologies`);
+  },
+
+  getTechnologyBySlug: (slug: string): Promise<AxiosResponse<ITechnology>> => {
+    return instance.get(`/technologies/${slug}`);
+  },
+
+  saveTechnology: (payload: FormData | { name: string; description?: string }): Promise<AxiosResponse<ITechnology>> => {
+    const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.post(`/save-technology`, payload, config);
+  },
+
+  updateTechnology(id: string, data: FormData | { name: string; description?: string }): Promise<AxiosResponse<ITechnology>> {
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.put(`/technologies/${id}`, data, config);
+  },
+
+  deleteTechnology(id: string): Promise<AxiosResponse<void>> {
+    return instance.delete(`/technologies/${id}`);
   },
 
   login: (credentials: { email: string; password: string }) => {

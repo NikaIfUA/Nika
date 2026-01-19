@@ -18,7 +18,7 @@
               hide-details
             ></v-text-field>
           </v-col>
-          <v-col cols="12" sm="3" class="d-flex ga-2">
+          <v-col cols="12" sm="4" class="d-flex ga-2">
             <v-btn
               :loading="isSaving"
               :disabled="isSaving"
@@ -34,6 +34,20 @@
               color="primary"
               variant="text"
             >Очистити</v-btn>
+          </v-col>
+        </v-row>
+
+        <v-row class="mt-2">
+          <v-col cols="12">
+            <v-textarea
+              v-model="categoryDescription"
+              label="Опис категорії"
+              placeholder="Введіть опис категорії..."
+              variant="outlined"
+              density="compact"
+              rows="4"
+              hide-details
+            ></v-textarea>
           </v-col>
         </v-row>
 
@@ -119,6 +133,7 @@ const headers = ref([
 ]);
 
 const categoryName = ref('');
+const categoryDescription = ref('');
 const editingCategory = ref<ICategory | null>(null);
 const isSaving = ref(false);
 const successMessage = ref('');
@@ -137,6 +152,7 @@ const categoryToDelete = ref<ICategory | null>(null);
 function handleRowClick(item: ICategory) {
   editingCategory.value = item;
   categoryName.value = item.name;
+  categoryDescription.value = item.description || '';
   successMessage.value = '';
   errorMessage.value = '';
 }
@@ -144,6 +160,7 @@ function handleRowClick(item: ICategory) {
 function cancelEdit() {
   editingCategory.value = null;
   categoryName.value = '';
+  categoryDescription.value = '';
 }
 
 async function saveCategory() {
@@ -159,11 +176,17 @@ async function saveCategory() {
 
   try {
     if (isEditing.value && editingCategory.value) {
-      const response = await mainApi.updateCategory(editingCategory.value.id, { name: categoryName.value.trim() });
+      const response = await mainApi.updateCategory(editingCategory.value.id, { 
+        name: categoryName.value.trim(),
+        description: categoryDescription.value.trim() || undefined
+      });
       categoriesStore.updateCategory(response.data as ICategory);
       successMessage.value = 'Category updated successfully!';
     } else {
-      const response = await mainApi.saveCategory({ name: categoryName.value.trim() });
+      const response = await mainApi.saveCategory({ 
+        name: categoryName.value.trim(),
+        description: categoryDescription.value.trim() || undefined
+      });
       categoriesStore.addCategory(response.data as ICategory);
       successMessage.value = 'Category created successfully!';
     }

@@ -3,15 +3,15 @@
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
         <div class="d-flex align-center">
-          <v-icon icon="mdi-texture-box"></v-icon> &nbsp;
-          Список матеріалів
+          <v-icon icon="mdi-lightning-bolt"></v-icon> &nbsp;
+          Список технологій
         </div>
         <v-btn
           color="primary"
           prepend-icon="mdi-plus-circle"
-          to="/admin/materials/add"
+          to="/admin/technologies/add"
         >
-          Додати матеріал
+          Додати технологію
         </v-btn>
       </v-card-title>
 
@@ -19,13 +19,13 @@
 
       <v-data-table
         :headers="headers"
-        :items="materials"
+        :items="technologies"
         :loading="isLoading"
-        loading-text="Завантаження матеріалів..."
-        no-data-text="Матеріали не знайдено."
+        loading-text="Завантаження технологій..."
+        no-data-text="Технології не знайдено."
         items-per-page="10"
         class="clickable-rows"
-        @click:row="(_: any, { item }: { item: IMaterial }) => handleRowClick(item)"
+        @click:row="(_: any, { item }: { item: ITechnology }) => handleRowClick(item)"
       >
         <template v-slot:item.actions="{ item }">
           <v-btn
@@ -46,8 +46,8 @@
 
     <ConfirmDeleteDialog
       v-model="isDeleteDialogOpen"
-      :item-name="materialToDelete?.name || ''"
-      item-type-name="матеріал"
+      :item-name="technologyToDelete?.name || ''"
+      item-type-name="технологію"
       :loading="isDeleting"
       @confirm="confirmDelete"
     />
@@ -59,19 +59,19 @@ import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { isAxiosError } from 'axios';
-import { useMaterialsStore } from '@/stores';
+import { useTechnologiesStore } from '@/stores';
 import mainApi from '@/api/main.api';
-import type { IMaterial } from '@/interfaces';
+import type { ITechnology } from '@/interfaces';
 import ConfirmDeleteDialog from './ConfirmDeleteForm.vue';
 
 const router = useRouter();
-const materialsStore = useMaterialsStore();
-const { materials } = storeToRefs(materialsStore);
+const technologiesStore = useTechnologiesStore();
+const { technologies } = storeToRefs(technologiesStore);
 const isLoading = ref(true);
 
 onMounted(async () => {
   isLoading.value = true;
-  await materialsStore.fetchMaterials();
+  await technologiesStore.fetchTechnologies();
   isLoading.value = false;
 });
 
@@ -82,25 +82,25 @@ const headers = ref([
 
 const isDeleteDialogOpen = ref(false);
 const isDeleting = ref(false);
-const materialToDelete = ref<IMaterial | null>(null);
+const technologyToDelete = ref<ITechnology | null>(null);
 
-function handleRowClick(item: IMaterial) {
-  router.push(`/admin/materials/${item.id}`);
+function handleRowClick(item: ITechnology) {
+  router.push(`/admin/technologies/${item.id}`);
 }
 
-function promptDelete(item: IMaterial) {
-  materialToDelete.value = item;
+function promptDelete(item: ITechnology) {
+  technologyToDelete.value = item;
   isDeleteDialogOpen.value = true;
 }
 
 async function confirmDelete() {
-  if (!materialToDelete.value) return;
+  if (!technologyToDelete.value) return;
 
   isDeleting.value = true;
   
   try {
-    await mainApi.deleteMaterial(materialToDelete.value.id);
-    materialsStore.removeMaterial(materialToDelete.value.id);
+    await mainApi.deleteTechnology(technologyToDelete.value.id);
+    technologiesStore.removeTechnology(technologyToDelete.value.id);
   } catch (err) {
     const message = isAxiosError(err)
       ? (err.response?.data?.message ?? err.message)
@@ -109,7 +109,7 @@ async function confirmDelete() {
   } finally {
     isDeleting.value = false;
     isDeleteDialogOpen.value = false;
-    materialToDelete.value = null;
+    technologyToDelete.value = null;
   }
 }
 </script>
