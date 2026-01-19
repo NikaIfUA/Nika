@@ -5,6 +5,7 @@ import imageRoutes from './imageRoutes.ts';
 import itemRouter from "./itemRoutes.ts";
 import mainRoutes from './mainRoutes.ts';
 import materialRoutes from "./materialRoutes.ts";
+import technologyRoutes from "./technologyRoutes.ts";
 import usersRoutes from './usersRoutes.ts';
 
 const router = new Router();
@@ -15,6 +16,7 @@ mainRoutes(router);
 usersRoutes(router);
 categoryRoutes(router);
 materialRoutes(router);
+technologyRoutes(router);
 contactRoutes(router);
 
 export default router;
