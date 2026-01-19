@@ -4,6 +4,9 @@ import * as t from "drizzle-orm/pg-core";
 export const categories = table('categories', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   name: t.varchar('name', { length: 255 }).notNull(),
+  slug: t.varchar('slug', { length: 255 }).notNull().unique(),
+  description: t.text('description'),
+  image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -47,6 +50,9 @@ export const categoryItems = table('category_items', {
 export const materials = table('materials', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   name: t.varchar('name', { length: 255 }).notNull(),
+  slug: t.varchar('slug', { length: 255 }).notNull().unique(),
+  description: t.text('description'),
+  image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -55,6 +61,16 @@ export const imageMaterials = table('image_materials', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   image_id: t.varchar('image_id', { length: 50 }).notNull().references(() => images.id, { onDelete: 'cascade' }),
   material_id: t.varchar('material_id', { length: 50 }).notNull().references(() => materials.id, { onDelete: 'cascade' }),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const technologies = table('technologies', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  name: t.varchar('name', { length: 255 }).notNull(),
+  slug: t.varchar('slug', { length: 255 }).notNull().unique(),
+  description: t.text('description'),
+  image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

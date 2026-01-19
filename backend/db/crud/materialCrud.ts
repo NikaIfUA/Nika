@@ -1,21 +1,69 @@
 import { getDbInstance } from '../connection.ts';
-import { materials } from '../schema.ts';
+import { materials, images } from '../schema.ts';
 import { eq } from 'npm:drizzle-orm';
 
-export async function createMaterial(data: { id: string; name: string }) {
+export async function createMaterial(data: { id: string; name: string; slug: string; description?: string; imageId?: string }) {
   const db = getDbInstance();
-  return await db.insert(materials).values(data).returning().then((res) => res[0]);
+  const materialData = {
+    ...data,
+    image_id: data.imageId,
+    imageId: undefined
+  };
+  const result = await db.insert(materials).values(materialData).returning().then((res) => res[0]);
+  
+  // Fetch with image relationship
+  return await fetchMaterialWithImage(result.id);
 }
 
 export async function getMaterials() {
   const db = getDbInstance();
-  return await db.select().from(materials);
+  const materialsList = await db.select().from(materials);
+  
+  // Fetch each material with its image
+  return await Promise.all(materialsList.map(m => fetchMaterialWithImage(m.id)));
 }
 
-export async function updateMaterial(id: string, name: string) {
+async function fetchMaterialWithImage(materialId: string) {
   const db = getDbInstance();
-  const result = await db.update(materials).set({ name }).where(eq(materials.id, id)).returning().then((res) => res[0]);
-  return result;
+  const material = await db.select().from(materials).where(eq(materials.id, materialId)).then(res => res[0]);
+  
+  if (!material) return null;
+  
+  let image: any = null;
+  if (material.image_id) {
+    const imageRecord = await db.select().from(images).where(eq(images.id, material.image_id)).then(res => res[0]);
+    if (imageRecord) {
+      image = {
+        id: imageRecord.id,
+        url: imageRecord.url,
+        description: imageRecord.description,
+        resolution: {
+          width: imageRecord.resolution_width,
+          height: imageRecord.resolution_height
+        },
+        mimeType: imageRecord.mime_type,
+        weight: imageRecord.weight
+      };
+    }
+  }
+  
+  return {
+    ...material,
+    image: image
+  };
+}
+
+export async function updateMaterial(id: string, data: { name?: string; description?: string; imageId?: string }) {
+  const db = getDbInstance();
+  const updateData = {
+    ...data,
+    image_id: data.imageId,
+    imageId: undefined
+  };
+  await db.update(materials).set(updateData).where(eq(materials.id, id));
+  
+  // Fetch updated material with image
+  return await fetchMaterialWithImage(id);
 }
 
 export async function deleteMaterial(id: string) {
