@@ -1,5 +1,6 @@
 import { RouterContext } from '../dependencies.ts';
 import { createMaterial, deleteMaterial, getMaterials, updateMaterial } from '../db/crud/materialCrud.ts';
+import { generateSlug, generateSlugSuffix } from '../util/slug.ts';
 
 class MaterialService {
   public static async saveMaterial({ request, response }: RouterContext<string>): Promise<void> {
@@ -14,10 +15,12 @@ class MaterialService {
 
       const body = request.body;
       let name = '';
+      let description = '';
       try {
         const txt = await body.text();
         const parsed = txt ? JSON.parse(txt) : {};
         name = parsed?.name ? String(parsed.name) : '';
+        description = parsed?.description ? String(parsed.description) : '';
       } catch (_e) {
         response.status = 400;
         response.body = { error: 'Invalid JSON payload' };
@@ -30,10 +33,47 @@ class MaterialService {
         return;
       }
 
-  const newMaterial = await createMaterial({ id: globalThis.crypto.randomUUID(), name: name.trim() });
+      const slug = generateSlug(name);
+      
+      if (!slug) {
+        response.status = 400;
+        response.body = { error: 'Material name must contain valid characters for URL' };
+        return;
+      }
 
-      response.status = 201;
-      response.body = newMaterial;
+      let finalSlug = slug;
+      let retries = 0;
+      const maxRetries = 5;
+
+      while (retries < maxRetries) {
+        try {
+          const newMaterial = await createMaterial({ 
+            id: globalThis.crypto.randomUUID(), 
+            name: name.trim(),
+            slug: finalSlug,
+            description: description && description.trim() ? description.trim() : undefined
+          });
+
+          response.status = 201;
+          response.body = newMaterial;
+          return;
+        } catch (createErr) {
+          const errorMsg = String(createErr);
+          if (errorMsg.includes('duplicate') && errorMsg.includes('slug')) {
+            // Slug already exists, add a suffix and retry
+            finalSlug = `${slug}-${generateSlugSuffix()}`;
+            retries++;
+          } else {
+            // Different error, throw it
+            throw createErr;
+          }
+        }
+      }
+
+      // If we get here, we couldn't create after retries
+      response.status = 409;
+      response.body = { error: 'Unable to create unique slug for this material name' };
+      return;
     } catch (err) {
       console.error('saveMaterial error:', err);
       response.status = 500;
@@ -63,7 +103,7 @@ class MaterialService {
     try {
       const materialId = params.id;
       const body = request.body;
-      const { name } = await body.json();
+      const { name, description } = await body.json();
 
       if (!name || !name.trim()) {
         response.status = 400;
@@ -71,8 +111,10 @@ class MaterialService {
         return;
       }
 
-      // FIX: Pass name.trim() directly as a string, not an object
-      const updatedMaterial = await updateMaterial(materialId, name.trim());
+      const updatedMaterial = await updateMaterial(materialId, { 
+        name: name.trim(),
+        description: description ? description.trim() : undefined
+      });
 
       if (!updatedMaterial) {
         response.status = 404;

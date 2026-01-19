@@ -47,6 +47,29 @@ class ImageService {
     }
   }
 
+  public static async fetchImageByIdGeneric({ response, params }: RouterContext<string>): Promise<void> {
+    try {
+      // This handler works with routes like /:resourceId/images/:imageId
+      const imageId = params.imageId;
+      const db = new Database();
+      const image = await db.getImageById(imageId);
+
+      if (!image || !image.url) {
+        response.status = 404;
+        response.body = { error: 'Image not found' };
+        return;
+      }
+
+      const { fileBytes, mime } = await ImageService.readImageFile(image.url);
+      response.headers.set('Content-Type', mime);
+      response.body = fileBytes;
+    } catch (err) {
+      console.error('fetchImageByIdGeneric error:', err);
+      response.status = 500;
+      response.body = { error: 'Unable to read image' };
+    }
+  }
+
   public static async fetchAllImages({ response }: RouterContext<string>): Promise<void> {
     try {
       const db = new Database();
