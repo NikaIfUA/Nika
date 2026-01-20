@@ -68,3 +68,36 @@ export function generateSlugSuffix(): string {
   }
   return suffix;
 }
+
+/**
+ * Create a slug with automatic retry on duplicate
+ * Handles duplicate slug errors by adding suffixes until unique or max retries reached
+ * @param baseSlug - The base slug to use
+ * @param createFunction - Function that creates the item (should throw error if slug exists)
+ * @param maxRetries - Maximum number of retry attempts (default: 5)
+ * @returns The created item or throws error if all retries failed
+ */
+export async function createWithUniqueSlug<T>(
+  baseSlug: string,
+  createFunction: (slug: string) => Promise<T>,
+  maxRetries: number = 5
+): Promise<T> {
+  let finalSlug = baseSlug;
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    try {
+      return await createFunction(finalSlug);
+    } catch (err) {
+      const errorMsg = String(err);
+      if (errorMsg.includes('duplicate') && errorMsg.includes('slug')) {
+        finalSlug = `${baseSlug}-${generateSlugSuffix()}`;
+        retries++;
+      } else {
+        throw err;
+      }
+    }
+  }
+
+  throw new Error(`Unable to create unique slug for "${baseSlug}" after ${maxRetries} attempts`);
+}

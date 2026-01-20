@@ -1,6 +1,6 @@
 import { RouterContext } from '../dependencies.ts';
 import { createMaterial, deleteMaterial, getMaterials, updateMaterial } from '../db/crud/materialCrud.ts';
-import { generateSlug, generateSlugSuffix } from '../util/slug.ts';
+import { generateSlug, createWithUniqueSlug } from '../util/slug.ts';
 
 class MaterialService {
   public static async saveMaterial({ request, response }: RouterContext<string>): Promise<void> {
@@ -41,38 +41,18 @@ class MaterialService {
         return;
       }
 
-      let finalSlug = slug;
-      let retries = 0;
-      const maxRetries = 5;
+      const newMaterial = await createWithUniqueSlug(
+        slug,
+        (finalSlug) => createMaterial({
+          id: globalThis.crypto.randomUUID(),
+          name: name.trim(),
+          slug: finalSlug,
+          description: description && description.trim() ? description.trim() : undefined
+        })
+      );
 
-      while (retries < maxRetries) {
-        try {
-          const newMaterial = await createMaterial({ 
-            id: globalThis.crypto.randomUUID(), 
-            name: name.trim(),
-            slug: finalSlug,
-            description: description && description.trim() ? description.trim() : undefined
-          });
-
-          response.status = 201;
-          response.body = newMaterial;
-          return;
-        } catch (createErr) {
-          const errorMsg = String(createErr);
-          if (errorMsg.includes('duplicate') && errorMsg.includes('slug')) {
-            // Slug already exists, add a suffix and retry
-            finalSlug = `${slug}-${generateSlugSuffix()}`;
-            retries++;
-          } else {
-            // Different error, throw it
-            throw createErr;
-          }
-        }
-      }
-
-      // If we get here, we couldn't create after retries
-      response.status = 409;
-      response.body = { error: 'Unable to create unique slug for this material name' };
+      response.status = 201;
+      response.body = newMaterial;
       return;
     } catch (err) {
       console.error('saveMaterial error:', err);
