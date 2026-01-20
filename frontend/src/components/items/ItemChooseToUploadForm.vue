@@ -17,7 +17,7 @@ import { storeToRefs } from 'pinia';
 import { useItemsStore } from '@/stores';
 import type { IItem } from '@/interfaces';
 import router from '@/router';
-import ItemsDataTable from '@/components/ItemsDataTable.vue'; // Використовуємо наш новий компонент
+import ItemsDataTable from '@/components/items/ItemsDataTable.vue'; // Використовуємо наш новий компонент
 
 const itemsStore = useItemsStore();
 // Тут ми беремо *всі* товари, а не тільки shopItems

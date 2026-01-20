@@ -141,9 +141,9 @@ import { ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 import type { IItem } from '../interfaces';
 import { useItemsStore } from '@/stores';
-import GalleryForm from '@/components/GalleryForm.vue';
-import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
-import ItemsDataTable from '@/components/ItemsDataTable.vue';
+import GalleryForm from '@/components/gallery/GalleryForm.vue';
+import ImageDetailsModal from '@/components/gallery/ImageDetailsModal.vue';
+import ItemsDataTable from '@/components/items/ItemsDataTable.vue';
 import {
   getPriceRange,
   filterItems,

@@ -160,7 +160,7 @@ import type { IImage } from '@/interfaces';
 import mainApi from '@/api/main.api';
 import { API_URL } from '@/env';
 import { useCategoriesStore, useMaterialsStore, useItemsStore } from '@/stores';
-import ConfirmDeleteDialog from '@/components/ConfirmDeleteForm.vue';
+import ConfirmDeleteDialog from '@/components/shared/ConfirmDeleteForm.vue';
 
 const categoriesStore = useCategoriesStore();
 const materialsStore = useMaterialsStore();

@@ -27,8 +27,8 @@ import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import type { IItem } from '../interfaces';
 import { useItemsStore } from '@/stores';
-import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
-import GalleryForm from '@/components/GalleryForm.vue';
+import ImageDetailsModal from '@/components/gallery/ImageDetailsModal.vue';
+import GalleryForm from '@/components/gallery/GalleryForm.vue';
 
 const itemsStore = useItemsStore();
 const { portfolioItems: items, imageUrls, itemsLoading, itemsError } = storeToRefs(itemsStore);

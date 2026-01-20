@@ -40,7 +40,7 @@
   import { useRouter } from "vue-router";
   import mainApi from '@/api/main.api';
   import type { IMaterial, ITechnology } from '@/interfaces';
-  import BaseInput from '@/components/BaseInput.vue';
+  import BaseInput from '@/components/base/BaseInput.vue';
 
   const router = useRouter();
   const searchQuery = ref('');

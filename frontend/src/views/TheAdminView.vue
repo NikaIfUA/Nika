@@ -38,10 +38,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-import ItemChooseToUploadForm from '@/components/ItemChooseToUploadForm.vue';
-import CategoryUploadForm from '@/components/CategoryUploadForm.vue';
-import MaterialUploadForm from '@/components/MaterialUploadForm.vue';
-import TechnologyUploadForm from '@/components/TechnologyUploadForm.vue';
+import ItemChooseToUploadForm from '@/components/items/ItemChooseToUploadForm.vue';
+import CategoryUploadForm from '@/components/categories/CategoryUploadForm.vue';
+import MaterialUploadForm from '@/components/materials/MaterialUploadForm.vue';
+import TechnologyUploadForm from '@/components/technologies/TechnologyUploadForm.vue';
 
 const activeTab = ref('items');
 </script>
