@@ -55,25 +55,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onActivated } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { isAxiosError } from 'axios';
 import { useTechnologiesStore } from '@/stores';
 import mainApi from '@/api/main.api';
 import type { ITechnology } from '@/interfaces';
-import ConfirmDeleteDialog from './ConfirmDeleteForm.vue';
+import ConfirmDeleteDialog from '../shared/ConfirmDeleteForm.vue';
 
 const router = useRouter();
 const technologiesStore = useTechnologiesStore();
 const { technologies } = storeToRefs(technologiesStore);
 const isLoading = ref(true);
 
-onMounted(async () => {
+const fetchData = async () => {
   isLoading.value = true;
   await technologiesStore.fetchTechnologies();
   isLoading.value = false;
-});
+};
+
+onMounted(fetchData);
+onActivated(fetchData);
 
 const headers = ref([
   { title: 'Назва', align: 'start' as const, key: 'name', sortable: true },

@@ -109,23 +109,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onActivated } from 'vue';
 import { storeToRefs } from 'pinia';
 import { isAxiosError } from 'axios';
 import { useCategoriesStore } from '@/stores';
 import mainApi from '@/api/main.api';
 import type { ICategory } from '@/interfaces';
-import ConfirmDeleteDialog from './ConfirmDeleteForm.vue';
+import ConfirmDeleteDialog from '../shared/ConfirmDeleteForm.vue';
 
 const categoriesStore = useCategoriesStore();
 const { categories } = storeToRefs(categoriesStore);
 const isLoading = ref(true);
 
-onMounted(async () => {
+const fetchData = async () => {
   isLoading.value = true;
   await categoriesStore.fetchCategories();
   isLoading.value = false;
-});
+};
+
+onMounted(fetchData);
+
+onActivated(fetchData);
 
 const headers = ref([
   { title: 'Назва', align: 'start' as const, key: 'name', sortable: true },

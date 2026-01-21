@@ -21,7 +21,32 @@
 
       <!-- Description Section -->
       <div class="detail-section">
-        <div class="detail-description">
+        <!-- Загальний опис -->
+        <div v-if="generalDescription" class="general-description mb-4">
+          <h3>Опис</h3>
+          <p>{{ generalDescription }}</p>
+        </div>
+
+        <!-- Секції -->
+        <div v-if="descriptionSections.length > 0" class="detail-description">
+          <h3>Деталі</h3>
+          <v-expansion-panels>
+            <v-expansion-panel
+              v-for="(section, index) in descriptionSections"
+              :key="index"
+            >
+              <v-expansion-panel-title>
+                {{ section.title || `Секція ${Number(index) + 1}` }}
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                {{ section.content }}
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+        </div>
+
+        <!-- Fallback для звичайного опису -->
+        <div v-if="!generalDescription && descriptionSections.length === 0" class="detail-description">
           {{ item.description || 'Опис недоступний' }}
         </div>
       </div>
@@ -30,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, computed } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import mainApi from '@/api/main.api';
   import type { IMaterial, ITechnology } from '@/interfaces';
@@ -39,12 +64,43 @@
   const route = useRoute();
   const router = useRouter();
   const item = ref<(IMaterial | ITechnology) | null>(null);
-  const itemType = ref<'material' | 'technology'>('material');
+  const itemType = ref<'material' | 'technology' | 'category'>('material');
   const isLoading = ref(false);
+
+  const parsedDescription = computed(() => {
+    if (!item.value?.description) return [];
+    try {
+      const parsed = JSON.parse(item.value.description);
+      if (typeof parsed === 'object' && parsed.sections && Array.isArray(parsed.sections)) {
+        return parsed.sections;
+      } else if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // Якщо не JSON, показуємо як звичайний текст
+    }
+    return [];
+  });
+
+  const generalDescription = computed(() => {
+    if (!item.value?.description) return '';
+    try {
+      const parsed = JSON.parse(item.value.description);
+      if (typeof parsed === 'object' && parsed.general) {
+        return parsed.general;
+      }
+    } catch {
+      // Якщо не JSON, повертаємо весь опис як загальний
+      return item.value.description;
+    }
+    return '';
+  });
+
+  const descriptionSections = computed(() => parsedDescription.value);
 
   const getImageUrl = (image: any): string => {
     if (!image || !image.id) return '';
-    const type = itemType.value === 'material' ? 'materials' : 'technologies';
+    let type = itemType.value === 'material' ? 'materials' : itemType.value === 'technology' ? 'technologies' : 'categories';
     return `${API_URL}/${type}/${item.value?.id}/images/${image.id}`;
   };
 
@@ -66,6 +122,13 @@
         const response = await mainApi.getAllTechnologies();
         if (response.status === 200) {
           const foundItem = response.data?.find((t) => t.slug === slug);
+          item.value = foundItem || null;
+        }
+      } else if (type === 'category') {
+        itemType.value = 'category';
+        const response = await mainApi.getAllCategories();
+        if (response.status === 200) {
+          const foundItem = response.data?.find((c: any) => c.slug === slug);
           item.value = foundItem || null;
         }
       }
@@ -162,6 +225,15 @@
   white-space: pre-wrap;
   word-wrap: break-word;
   font-size: 0.95rem;
+}
+
+.general-description {
+  padding: 1rem;
+  background-color: #fff;
+}
+
+.general-description h3 {
+  margin-top: 0;
 }
 
 .image-section {

@@ -36,61 +36,68 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: () => import('../views/TheAdminView.vue'),
-    },
-    {
-      path: '/admin/item/new',
-      name: 'uploadItem',
-      component: () => import('../components/ItemUploadForm.vue'),
-    },
-    {
-      path: '/admin/item/:id',
-      name: 'editItem',
-      component: () => import('../components/ItemUploadForm.vue'),
-    },
-    {
-      path: '/admin/category',
-      name: 'uploadCategory',
-      component: () => import('../components/CategoryUploadForm.vue'),
-    },
-    {
-      path: '/admin/material',
-      name: 'uploadMaterial',
-      component: () => import('../components/MaterialUploadForm.vue'),
-    },
-    {
-      path: '/admin/technology',
-      name: 'uploadTechnology',
-      component: () => import('../components/TechnologyUploadForm.vue'),
-    },
-    {
-      path: '/admin/materials',
-      name: 'materials',
-      component: () => import('../components/MaterialUploadForm.vue'),
-    },
-    {
-      path: '/admin/materials/add',
-      name: 'addMaterial',
-      component: () => import('../components/MaterialAddForm.vue'),
-    },
-    {
-      path: '/admin/materials/:id',
-      name: 'editMaterial',
-      component: () => import('../components/MaterialAddForm.vue'),
-    },
-    {
-      path: '/admin/technologies',
-      name: 'technologies',
-      component: () => import('../components/TechnologyUploadForm.vue'),
-    },
-    {
-      path: '/admin/technologies/add',
-      name: 'addTechnology',
-      component: () => import('../components/TechnologyAddForm.vue'),
-    },
-    {
-      path: '/admin/technologies/:id',
-      name: 'editTechnology',
-      component: () => import('../components/TechnologyAddForm.vue'),
+      children: [
+        {
+          path: 'materials',
+          name: 'materials',
+          component: () => import('../components/materials/MaterialUploadForm.vue'),
+        },
+        {
+          path: 'materials/add',
+          name: 'addMaterial',
+          component: () => import('../components/materials/MaterialAddForm.vue'),
+        },
+        {
+          path: 'materials/:id',
+          name: 'editMaterial',
+          component: () => import('../components/materials/MaterialAddForm.vue'),
+        },
+        {
+          path: 'technologies',
+          name: 'technologies',
+          component: () => import('../components/technologies/TechnologyUploadForm.vue'),
+        },
+        {
+          path: 'technologies/add',
+          name: 'addTechnology',
+          component: () => import('../components/technologies/TechnologyAddForm.vue'),
+        },
+        {
+          path: 'technologies/:id',
+          name: 'editTechnology',
+          component: () => import('../components/technologies/TechnologyAddForm.vue'),
+        },
+        {
+          path: 'categories',
+          name: 'categories',
+          component: () => import('../components/categories/CategoryUploadForm.vue'),
+        },
+        {
+          path: 'categories/add',
+          name: 'addCategory',
+          component: () => import('../components/categories/CategoryAddForm.vue'),
+        },
+        {
+          path: 'categories/:id',
+          name: 'editCategory',
+          component: () => import('../components/categories/CategoryAddForm.vue'),
+        },
+        {
+          path: 'items',
+          name: 'items',
+          component: () => import('../components/items/ItemChooseToUploadForm.vue'),
+        },
+        {
+          path: 'item/new',
+          name: 'uploadItem',
+          component: () => import('../components/items/ItemUploadForm.vue'),
+        },
+        {
+          path: 'item/:id',
+          name: 'editItem',
+          component: () => import('../components/items/ItemUploadForm.vue'),
+        },
+      ],
     },
     {
       path: '/auth',
@@ -100,7 +107,7 @@ const router = createRouter({
     {
       path: '/admin/items',
       name: 'items',
-      component: () => import('../components/ItemChooseToUploadForm.vue'),
+      component: () => import('../components/items/ItemChooseToUploadForm.vue'),
     }
   ],
 })

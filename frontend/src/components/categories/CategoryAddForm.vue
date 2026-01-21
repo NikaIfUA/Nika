@@ -2,19 +2,19 @@
   <v-container>
     <v-card>
       <v-card-title class="d-flex align-center pe-2">
-        <v-btn icon variant="text" to="/admin/materials" class="me-2">
+        <v-btn icon variant="text" to="/admin/categories" class="me-2">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
-        <v-icon icon="mdi-texture-box"></v-icon> &nbsp;
-        {{ isEditing ? `Редагування матеріалу: ${materialName}` : 'Створення матеріалу' }}
+        <v-icon icon="mdi-tag-multiple"></v-icon> &nbsp;
+        {{ isEditing ? `Редагування категорії: ${categoryName}` : 'Створення категорії' }}
       </v-card-title>
 
       <v-card-text>
         <v-row>
           <v-col cols="12" md="8">
             <v-row>
-              <v-col v-if="materialImage" cols="12">
-                <v-img :src="materialImage" aspect-ratio="1" cover class="image-preview">
+              <v-col v-if="categoryImage" cols="12">
+                <v-img :src="categoryImage" aspect-ratio="1" cover class="image-preview">
                   <template v-slot:placeholder>
                     <div class="d-flex align-center justify-center fill-height">
                       <v-progress-circular color="grey-lighten-4" indeterminate />
@@ -30,7 +30,7 @@
               <v-btn color="primary" variant="outlined" @click="triggerFileInput">
                 Додати зображення
               </v-btn>
-              <v-btn v-if="materialImage" color="error" variant="outlined" @click="deleteImage">
+              <v-btn v-if="categoryImage" color="error" variant="outlined" @click="deleteImage">
                 Видалити
               </v-btn>
             </div>
@@ -41,19 +41,19 @@
 
         <v-row>
           <v-col cols="12">
-            <v-text-field v-model="materialName" label="Назва матеріалу" variant="outlined" />
+            <v-text-field v-model="categoryName" label="Назва категорії" variant="outlined" />
           </v-col>
           <v-col cols="12">
             <v-textarea
               v-model="generalDescription"
               label="Загальний опис"
-              placeholder="Введіть загальний опис матеріалу..."
+              placeholder="Введіть загальний опис категорії..."
               variant="outlined"
               rows="3"
             />
           </v-col>
           <v-col cols="12">
-            <div class="mb-2 font-weight-bold">Деталі матеріалу (Секції):</div>
+            <div class="mb-2 font-weight-bold">Деталі категорії (Секції):</div>
             <v-expansion-panels>
               <v-expansion-panel
                 v-for="(section, index) in descriptionSections"
@@ -124,7 +124,7 @@
           <v-btn
             :loading="isSaving"
             :disabled="isSaving"
-            @click="saveMaterial"
+            @click="saveCategory"
             :color="isEditing ? 'success' : 'primary'"
             variant="flat"
             :prepend-icon="isEditing ? 'mdi-content-save' : 'mdi-plus-circle'"
@@ -143,18 +143,18 @@
 import { ref, computed, onMounted } from 'vue';
 import { isAxiosError } from 'axios';
 import { useRouter, useRoute } from 'vue-router';
-import { useMaterialsStore } from '@/stores';
+import { useCategoriesStore } from '@/stores';
 import mainApi from '@/api/main.api';
-import type { IMaterial } from '@/interfaces';
+import type { ICategory } from '@/interfaces';
 
 const router = useRouter();
 const route = useRoute();
-const materialsStore = useMaterialsStore();
+const categoriesStore = useCategoriesStore();
 
-const materialName = ref('');
+const categoryName = ref('');
 const generalDescription = ref('');
-const materialDescription = ref('');
-const materialImage = ref<string>('');
+const categoryDescription = ref('');
+const categoryImage = ref<string>('');
 const newImageFile = ref<File | null>(null);
 const isSaving = ref(false);
 const successMessage = ref('');
@@ -166,21 +166,21 @@ const isEditing = computed(() => !!route.params.id);
 
 onMounted(async () => {
   if (route.params.id) {
-    const material = materialsStore.materials.find(m => m.id === route.params.id);
-    if (material) {
-      loadEditingMaterial(material);
+    const category = categoriesStore.categories.find(c => c.id === route.params.id);
+    if (category) {
+      loadEditingCategory(category);
     }
   }
 });
 
-function loadEditingMaterial(material: IMaterial) {
-  materialName.value = material.name;
+function loadEditingCategory(category: ICategory) {
+  categoryName.value = category.name;
   newImageFile.value = null;
   
   // Парсимо JSON опис
-  if (material.description) {
+  if (category.description) {
     try {
-      const parsed = JSON.parse(material.description);
+      const parsed = JSON.parse(category.description);
       if (typeof parsed === 'object' && parsed.general && Array.isArray(parsed.sections)) {
         // Новий формат з загальним описом та секціями
         generalDescription.value = parsed.general;
@@ -191,22 +191,22 @@ function loadEditingMaterial(material: IMaterial) {
         descriptionSections.value = parsed;
       } else {
         // Звичайний текст
-        generalDescription.value = material.description;
+        generalDescription.value = category.description;
         descriptionSections.value = [];
       }
     } catch {
       // Не JSON - звичайний текст
-      generalDescription.value = material.description;
+      generalDescription.value = category.description;
       descriptionSections.value = [];
     }
   } else {
     generalDescription.value = '';
     descriptionSections.value = [];
   }
-  if (material.image?.id && material.id) {
-    materialImage.value = mainApi.getMaterialImageUrl(material.id, material.image.id);
+  if (category.image?.id && category.id) {
+    categoryImage.value = mainApi.getCategoryImageUrl(category.id, category.image.id);
   } else {
-    materialImage.value = '';
+    categoryImage.value = '';
   }
 }
 
@@ -219,15 +219,15 @@ function onFileChanged(event: Event) {
   if (!target.files || !target.files[0]) return;
   const file = target.files[0];
   newImageFile.value = file;
-  materialImage.value = URL.createObjectURL(file);
+  categoryImage.value = URL.createObjectURL(file);
   target.value = '';
 }
 
 function deleteImage() {
-  if (materialImage.value.startsWith('blob:')) {
-    URL.revokeObjectURL(materialImage.value);
+  if (categoryImage.value.startsWith('blob:')) {
+    URL.revokeObjectURL(categoryImage.value);
   }
-  materialImage.value = '';
+  categoryImage.value = '';
   newImageFile.value = null;
   if (fileInput.value) {
     fileInput.value.value = '';
@@ -242,9 +242,9 @@ function deleteSection(index: number) {
   descriptionSections.value.splice(index, 1);
 }
 
-async function saveMaterial() {
-  if (!materialName.value.trim()) {
-    errorMessage.value = 'Назва матеріалу не може бути порожньою.';
+async function saveCategory() {
+  if (!categoryName.value.trim()) {
+    errorMessage.value = 'Назва категорії не може бути порожньою.';
     successMessage.value = '';
     return;
   }
@@ -256,7 +256,7 @@ async function saveMaterial() {
   try {
     if (isEditing.value && route.params.id) {
       const formData = new FormData();
-      formData.append('name', materialName.value.trim());
+      formData.append('name', categoryName.value.trim());
       // Серіалізуємо загальний опис та секції в JSON
       const descriptionData = {
         general: generalDescription.value.trim(),
@@ -267,15 +267,15 @@ async function saveMaterial() {
         formData.append('image', newImageFile.value);
       }
 
-      const response = await mainApi.updateMaterial(route.params.id as string, formData);
-      materialsStore.updateMaterial(response.data as IMaterial);
-      successMessage.value = 'Матеріал успішно оновлено!';
+      const response = await mainApi.updateCategory(route.params.id as string, formData);
+      categoriesStore.updateCategory(response.data as ICategory);
+      successMessage.value = 'Категорія успішно оновлена!';
       setTimeout(() => {
-        router.push('/admin/materials');
+        router.push('/admin/categories');
       }, 1500);
     } else {
       const formData = new FormData();
-      formData.append('name', materialName.value.trim());
+      formData.append('name', categoryName.value.trim());
       // Серіалізуємо загальний опис та секції в JSON
       const descriptionData = {
         general: generalDescription.value.trim(),
@@ -286,11 +286,11 @@ async function saveMaterial() {
         formData.append('image', newImageFile.value);
       }
 
-      const response = await mainApi.saveMaterial(formData);
-      materialsStore.addMaterial(response.data as IMaterial);
-      successMessage.value = 'Матеріал успішно створено!';
+      const response = await mainApi.saveCategory(formData);
+      categoriesStore.addCategory(response.data as ICategory);
+      successMessage.value = 'Категорія успішно створена!';
       setTimeout(() => {
-        router.push('/admin/materials');
+        router.push('/admin/categories');
       }, 1500);
     }
   } catch (err) {
@@ -304,11 +304,11 @@ async function saveMaterial() {
 }
 
 function cancelEdit() {
-  router.push('/admin/materials');
+  router.push('/admin/categories');
 }
 
 defineExpose({
-  loadEditingMaterial
+  loadEditingCategory
 });
 </script>
 

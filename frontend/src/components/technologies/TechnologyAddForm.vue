@@ -66,11 +66,57 @@
         </v-col>
         <v-col cols="12">
           <v-textarea
-            v-model="technologyDescription"
-            label="Опис технології"
-            placeholder="Введіть опис технології..."
+            v-model="generalDescription"
+            label="Загальний опис"
+            placeholder="Введіть загальний опис технології..."
             variant="outlined"
+            rows="3"
           />
+        </v-col>
+        <v-col cols="12">
+          <div class="mb-2 font-weight-bold">Деталі технології (Секції):</div>
+          <v-expansion-panels>
+            <v-expansion-panel
+              v-for="(section, index) in descriptionSections"
+              :key="index"
+            >
+              <v-expansion-panel-title>
+                {{ section.title || `Секція ${index + 1}` }}
+              </v-expansion-panel-title>
+              <v-expansion-panel-text>
+                <v-text-field
+                  v-model="section.title"
+                  label="Назва секції"
+                  variant="outlined"
+                  class="mb-3"
+                />
+                <v-textarea
+                  v-model="section.content"
+                  label="Вміст секції"
+                  placeholder="Введіть текст..."
+                  variant="outlined"
+                  rows="4"
+                />
+                <v-btn
+                  color="error"
+                  variant="text"
+                  size="small"
+                  @click="deleteSection(index)"
+                  class="mt-2"
+                >
+                  <v-icon>mdi-delete</v-icon> Видалити секцію
+                </v-btn>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+          <v-btn
+            color="primary"
+            variant="outlined"
+            @click="addSection"
+            class="mt-3"
+          >
+            <v-icon>mdi-plus</v-icon> Додати секцію
+          </v-btn>
         </v-col>
       </v-row>
 
@@ -131,19 +177,20 @@ import { useRouter, useRoute } from 'vue-router';
 import { useTechnologiesStore } from '@/stores';
 import mainApi from '@/api/main.api';
 import type { ITechnology } from '@/interfaces';
-import { API_URL } from '@/env';
 
 const router = useRouter();
 const route = useRoute();
 const technologiesStore = useTechnologiesStore();
 
 const technologyName = ref('');
+const generalDescription = ref('');
 const technologyDescription = ref('');
 const technologyImage = ref<string>('');
 const newImageFile = ref<File | null>(null);
 const isSaving = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+const descriptionSections = ref<Array<{ title: string; content: string }>>([]);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -160,11 +207,37 @@ onMounted(async () => {
 
 function loadEditingTechnology(technology: ITechnology) {
   technologyName.value = technology.name;
-  technologyDescription.value = technology.description || '';
   newImageFile.value = null;
   
+  // Парсимо JSON опис
+  if (technology.description) {
+    try {
+      const parsed = JSON.parse(technology.description);
+      if (typeof parsed === 'object' && parsed.general && Array.isArray(parsed.sections)) {
+        // Новий формат з загальним описом та секціями
+        generalDescription.value = parsed.general;
+        descriptionSections.value = parsed.sections;
+      } else if (Array.isArray(parsed)) {
+        // Старий формат - тільки секції
+        generalDescription.value = '';
+        descriptionSections.value = parsed;
+      } else {
+        // Звичайний текст
+        generalDescription.value = technology.description;
+        descriptionSections.value = [];
+      }
+    } catch {
+      // Не JSON - звичайний текст
+      generalDescription.value = technology.description;
+      descriptionSections.value = [];
+    }
+  } else {
+    generalDescription.value = '';
+    descriptionSections.value = [];
+  }
+  
   if (technology.image?.id && technology.id) {
-    technologyImage.value = `${API_URL}/technologies/${technology.id}/images/${technology.image.id}`;
+    technologyImage.value = mainApi.getTechnologyImageUrl(technology.id, technology.image.id);
   } else {
     technologyImage.value = '';
   }
@@ -195,6 +268,14 @@ function deleteImage() {
   }
 }
 
+function addSection() {
+  descriptionSections.value.push({ title: '', content: '' });
+}
+
+function deleteSection(index: number) {
+  descriptionSections.value.splice(index, 1);
+}
+
 async function saveTechnology() {
   if (!technologyName.value.trim()) {
     errorMessage.value = 'Назва технології не може бути порожньою.';
@@ -210,9 +291,12 @@ async function saveTechnology() {
     if (isEditing.value && route.params.id) {
       const formData = new FormData();
       formData.append('name', technologyName.value.trim());
-      if (technologyDescription.value.trim()) {
-        formData.append('description', technologyDescription.value.trim());
-      }
+      // Серіалізуємо загальний опис та секції в JSON
+      const descriptionData = {
+        general: generalDescription.value.trim(),
+        sections: descriptionSections.value
+      };
+      formData.append('description', JSON.stringify(descriptionData));
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }
@@ -226,9 +310,12 @@ async function saveTechnology() {
     } else {
       const formData = new FormData();
       formData.append('name', technologyName.value.trim());
-      if (technologyDescription.value.trim()) {
-        formData.append('description', technologyDescription.value.trim());
-      }
+      // Серіалізуємо загальний опис та секції в JSON
+      const descriptionData = {
+        general: generalDescription.value.trim(),
+        sections: descriptionSections.value
+      };
+      formData.append('description', JSON.stringify(descriptionData));
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }
@@ -251,7 +338,7 @@ async function saveTechnology() {
 }
 
 function cancelEdit() {
-  router.back();
+  router.push('/admin/technologies');
 }
 
 // Expose functions for parent

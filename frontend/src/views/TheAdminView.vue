@@ -3,22 +3,22 @@
     <v-tabs v-model="activeTab" centered color="primary" class="mb-4">
       <v-spacer></v-spacer>
 
-      <v-tab value="items">
+      <v-tab value="items" to="/admin/items">
         <v-icon start icon="mdi-package-variant-closed"></v-icon>
         Товари
       </v-tab>
 
-      <v-tab value="category">
+      <v-tab value="category" to="/admin/categories">
         <v-icon start icon="mdi-shape-plus"></v-icon>
         Категорії
       </v-tab>
 
-      <v-tab value="material">
+      <v-tab value="material" to="/admin/materials">
         <v-icon start icon="mdi-texture-box"></v-icon>
         Матеріали
       </v-tab>
       
-      <v-tab value="technology">
+      <v-tab value="technology" to="/admin/technologies">
         <v-icon start icon="mdi-lightning-bolt"></v-icon>
         Технології
       </v-tab>
@@ -27,21 +27,23 @@
     </v-tabs>
 
     <v-container>
-      <ItemChooseToUploadForm v-show="activeTab === 'items'" />
-      <CategoryUploadForm v-show="activeTab === 'category'" />
-      <MaterialUploadForm v-show="activeTab === 'material'" />
-      <TechnologyUploadForm v-show="activeTab === 'technology'" />
+      <router-view />
     </v-container>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useRoute } from 'vue-router';
 
-import ItemChooseToUploadForm from '@/components/items/ItemChooseToUploadForm.vue';
-import CategoryUploadForm from '@/components/categories/CategoryUploadForm.vue';
-import MaterialUploadForm from '@/components/materials/MaterialUploadForm.vue';
-import TechnologyUploadForm from '@/components/technologies/TechnologyUploadForm.vue';
-
+const route = useRoute();
 const activeTab = ref('items');
+
+// Оновлюємо активну табу залежно від поточного маршруту
+watch(() => route.path, () => {
+  if (route.path.includes('materials')) activeTab.value = 'material';
+  else if (route.path.includes('categories')) activeTab.value = 'category';
+  else if (route.path.includes('technologies')) activeTab.value = 'technology';
+  else activeTab.value = 'items';
+}, { immediate: true });
 </script>

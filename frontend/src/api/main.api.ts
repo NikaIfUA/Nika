@@ -62,16 +62,22 @@ const mainApi = {
     return instance.get(`/get-categories`);
   },
 
-  saveCategory: (payload: { name: string; description?: string }): Promise<AxiosResponse<any>> => {
-    return instance.post(`/save-category`, payload);
+  saveCategory: (payload: FormData | { name: string; description?: string }): Promise<AxiosResponse<any>> => {
+    const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.post(`/save-category`, payload, config);
   },
 
-  updateCategory: (id: string, payload: { name: string; description?: string }): Promise<AxiosResponse<any>> => {
-    return instance.put(`/categories/${id}`, payload);
+  updateCategory: (id: string, data: FormData | { name: string; description?: string }): Promise<AxiosResponse<any>> => {
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.put(`/categories/${id}`, data, config);
   },
   
   deleteCategory: (id: string): Promise<AxiosResponse<void>> => {
     return instance.delete(`/categories/${id}`);
+  },
+
+  getCategoryImageUrl: (categoryId: string, imageId: string): string => {
+    return `${API_URL}/categories/${categoryId}/images/${imageId}`;
   },
 
   getAllMaterials: (): Promise<AxiosResponse<IMaterial[]>> => {
@@ -90,6 +96,10 @@ const mainApi = {
 
   deleteMaterial(id: string): Promise<AxiosResponse<void>> {
     return instance.delete(`/materials/${id}`);
+  },
+
+  getMaterialImageUrl: (materialId: string, imageId: string): string => {
+    return `${API_URL}/materials/${materialId}/images/${imageId}`;
   },
 
   getAllTechnologies: (): Promise<AxiosResponse<ITechnology[]>> => {
@@ -112,6 +122,10 @@ const mainApi = {
 
   deleteTechnology(id: string): Promise<AxiosResponse<void>> {
     return instance.delete(`/technologies/${id}`);
+  },
+
+  getTechnologyImageUrl: (technologyId: string, imageId: string): string => {
+    return `${API_URL}/technologies/${technologyId}/images/${imageId}`;
   },
 
   login: (credentials: { email: string; password: string }) => {

@@ -22,9 +22,6 @@
             @click="selectItem(item)"
           >
             <span class="item-link">{{ item.name }}</span>
-            <div v-if="item.description" class="item-hint">
-              {{ truncateText(item.description, 60) }}
-            </div>
           </div>
         </div>
         <div v-else class="empty-state">

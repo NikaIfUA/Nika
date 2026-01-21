@@ -7,6 +7,7 @@
       <RouterLink to="/">Наші роботи</RouterLink>
       <RouterLink to="/shop">Крамниця</RouterLink>
       <RouterLink to="/contacts">Контакти</RouterLink>
+      <RouterLink to="/info">Довідка користувача</RouterLink>
       <RouterLink v-if="auth.allowed" to="/admin">Адмінка</RouterLink>
     </div>
     <div class="nav-right">
