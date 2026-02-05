@@ -6,6 +6,7 @@ export interface IItem {
   price?: number | null;
   amountAvailable?: number | null;
   materials?: IMaterial[] | null;
+  technologies?: ITechnology[] | null;
   images: IImage[];
   coverImage: string; //id of main image
   isUnique: boolean;
@@ -45,6 +46,7 @@ export interface ITechnology {
   slug: string;
   description?: string;
   image?: IImage | null;
+  selectedSections?: number[]; // Indices of selected sections
 }
 
 export interface IUser {

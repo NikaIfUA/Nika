@@ -30,10 +30,24 @@
         <!-- Секції -->
         <div v-if="descriptionSections.length > 0" class="detail-description">
           <h3>Деталі</h3>
-          <v-expansion-panels>
+          <!-- Навігація по секціях -->
+          <div v-if="descriptionSections.length > 1" class="sections-navigation">
+            <a 
+              v-for="(section, index) in descriptionSections"
+              :key="`nav-${index}`"
+              :href="`#section-${getSectionId(section, Number(index))}`"
+              class="section-link"
+            >
+              {{ section.title || `Секція ${Number(index) + 1}` }}
+            </a>
+          </div>
+          
+          <v-expansion-panels v-model="openedPanels">
             <v-expansion-panel
               v-for="(section, index) in descriptionSections"
               :key="index"
+              :id="`section-${getSectionId(section, Number(index))}`"
+              :value="index"
             >
               <v-expansion-panel-title>
                 {{ section.title || `Секція ${Number(index) + 1}` }}
@@ -55,17 +69,23 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, computed } from 'vue';
+  import { ref, onMounted, computed, watch, nextTick } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import mainApi from '@/api/main.api';
   import type { IMaterial, ITechnology } from '@/interfaces';
   import { API_URL } from '@/env';
+
+  interface DescriptionSection {
+    title: string;
+    content: string;
+  }
 
   const route = useRoute();
   const router = useRouter();
   const item = ref<(IMaterial | ITechnology) | null>(null);
   const itemType = ref<'material' | 'technology' | 'category'>('material');
   const isLoading = ref(false);
+  const openedPanels = ref<number[]>([]);
 
   const parsedDescription = computed(() => {
     if (!item.value?.description) return [];
@@ -97,6 +117,20 @@
   });
 
   const descriptionSections = computed(() => parsedDescription.value);
+
+  // Функція для генерації унікального ID секції на основі назви
+  const getSectionId = (section: DescriptionSection, index: number): string => {
+    if (section.title) {
+      return section.title
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+    }
+    return `section-${index}`;
+  };
 
   const getImageUrl = (image: any): string => {
     if (!image || !image.id) return '';
@@ -136,6 +170,10 @@
       if (!item.value) {
         console.warn('Item not found, redirecting...');
         router.push({ name: 'info' });
+      } else {
+        // Після завантаження даних перевіряємо чи є hash в URL
+        await nextTick();
+        openSectionFromHash();
       }
     } catch (error) {
       console.error('Error loading item details:', error);
@@ -144,6 +182,39 @@
       isLoading.value = false;
     }
   };
+
+  // Функція для відкриття секції за hash в URL
+  const openSectionFromHash = () => {
+    const hash = route.hash;
+    if (hash && hash.startsWith('#section-')) {
+      const sectionId = hash.substring(9); // Видаляємо '#section-'
+      
+      // Знаходимо індекс секції за її ID
+      const sectionIndex = descriptionSections.value.findIndex((section: DescriptionSection, index: number) => {
+        return getSectionId(section, index) === sectionId;
+      });
+
+      if (sectionIndex !== -1) {
+        // Відкриваємо панель
+        openedPanels.value = [sectionIndex];
+        
+        // Прокручуємо до секції
+        nextTick(() => {
+          const element = document.getElementById(`section-${sectionId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      }
+    }
+  };
+
+  // Відстежуємо зміни hash
+  watch(() => route.hash, () => {
+    if (item.value) {
+      openSectionFromHash();
+    }
+  });
 
   onMounted(() => {
     loadData();
@@ -236,6 +307,36 @@
   margin-top: 0;
 }
 
+.sections-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.section-link {
+  padding: 0.5rem 1rem;
+  background-color: #f0f0f0;
+  color: #0645ad;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid #d0d0d0;
+}
+
+.section-link:hover {
+  background-color: #0645ad;
+  color: #fff;
+  border-color: #0645ad;
+  text-decoration: none;
+}
+
 .image-section {
   width: 100%;
   margin-bottom: 2rem;
@@ -307,6 +408,15 @@
 
   .detail-description {
     font-size: 0.9rem;
+  }
+
+  .sections-navigation {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .section-link {
+    text-align: center;
   }
 }
 

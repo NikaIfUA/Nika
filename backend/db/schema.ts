@@ -75,6 +75,15 @@ export const technologies = table('technologies', {
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const itemTechnologies = table('item_technologies', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  item_id: t.varchar('item_id', { length: 50 }).notNull().references(() => items.id, { onDelete: 'cascade' }),
+  technology_id: t.varchar('technology_id', { length: 50 }).notNull().references(() => technologies.id, { onDelete: 'cascade' }),
+  selected_sections: t.json('selected_sections').$type<number[]>(),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const users = table('users', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   name: t.varchar('name', { length: 255 }).notNull(),

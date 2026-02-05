@@ -36,6 +36,7 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: () => import('../views/TheAdminView.vue'),
+      redirect: '/admin/items',
       children: [
         {
           path: 'materials',
@@ -88,12 +89,12 @@ const router = createRouter({
           component: () => import('../components/items/ItemChooseToUploadForm.vue'),
         },
         {
-          path: 'item/new',
+          path: 'items/new',
           name: 'uploadItem',
           component: () => import('../components/items/ItemUploadForm.vue'),
         },
         {
-          path: 'item/:id',
+          path: 'items/:id',
           name: 'editItem',
           component: () => import('../components/items/ItemUploadForm.vue'),
         },
@@ -104,11 +105,6 @@ const router = createRouter({
       name: 'auth',
       component: () => import('../views/TheAuthView.vue'),
     },
-    {
-      path: '/admin/items',
-      name: 'items',
-      component: () => import('../components/items/ItemChooseToUploadForm.vue'),
-    }
   ],
 })
 

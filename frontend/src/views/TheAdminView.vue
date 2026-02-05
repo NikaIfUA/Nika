@@ -44,6 +44,7 @@ watch(() => route.path, () => {
   if (route.path.includes('materials')) activeTab.value = 'material';
   else if (route.path.includes('categories')) activeTab.value = 'category';
   else if (route.path.includes('technologies')) activeTab.value = 'technology';
+  else if (route.path.includes('items')) activeTab.value = 'items';
   else activeTab.value = 'items';
 }, { immediate: true });
 </script>

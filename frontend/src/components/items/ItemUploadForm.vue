@@ -124,6 +124,48 @@
           variant="outlined"
         />
       </v-col>
+      
+      <v-col cols="12">
+        <div class="mb-2 font-weight-medium">Технології та їх класифікації:</div>
+        <v-expansion-panels v-if="technologies.length > 0">
+          <v-expansion-panel
+            v-for="tech in technologies"
+            :key="tech.id"
+          >
+            <v-expansion-panel-title>
+              <v-checkbox
+                :model-value="isTechnologySelected(tech.id)"
+                @update:model-value="toggleTechnology(tech.id, !!$event)"
+                @click.stop
+                :label="tech.name"
+                hide-details
+                density="compact"
+              />
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div v-if="getTechnologySections(tech).length > 0" class="pl-4">
+                <div class="text-caption mb-2">Оберіть конкретні секції (необов'язково):</div>
+                <v-checkbox
+                  v-for="(section, index) in getTechnologySections(tech)"
+                  :key="index"
+                  :model-value="isSectionSelected(tech.id, index)"
+                  @update:model-value="toggleSection(tech.id, index, !!$event)"
+                  :label="section.title || `Секція ${index + 1}`"
+                  hide-details
+                  density="compact"
+                  class="mb-1"
+                />
+              </div>
+              <div v-else class="text-caption text-grey pl-4">
+                У цієї технології немає секцій
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+        <div v-else class="text-caption text-grey">
+          Технології не знайдено
+        </div>
+      </v-col>
     </v-row>
 
     <input
@@ -159,14 +201,16 @@ import { storeToRefs } from 'pinia';
 import type { IImage } from '@/interfaces';
 import mainApi from '@/api/main.api';
 import { API_URL } from '@/env';
-import { useCategoriesStore, useMaterialsStore, useItemsStore } from '@/stores';
+import { useCategoriesStore, useMaterialsStore, useTechnologiesStore, useItemsStore } from '@/stores';
 import ConfirmDeleteDialog from '@/components/shared/ConfirmDeleteForm.vue';
 
 const categoriesStore = useCategoriesStore();
 const materialsStore = useMaterialsStore();
+const technologiesStore = useTechnologiesStore();
 const itemsStore = useItemsStore();
 const { categories } = storeToRefs(categoriesStore);
 const { materials } = storeToRefs(materialsStore);
+const { technologies } = storeToRefs(technologiesStore);
 
 const route = useRoute();
 const router = useRouter();
@@ -180,8 +224,13 @@ const itemData = reactive({
   price: null as number | null,
   amountAvailable: null as number | null,
   materialIds: [] as string[],
+  technologyIds: [] as string[],
   isUnique: false,
 });
+
+// Нова структура для зберігання технологій з секціями
+const selectedTechnologies = ref<Map<string, number[]>>(new Map());
+// Map: technologyId -> array of section indices (empty array = всі секції)
 
 const newFiles = ref<File[]>([]);
 const imagePreviews = ref<string[]>([]);
@@ -208,12 +257,14 @@ function resetState() {
     price: null,
     amountAvailable: null,
     materialIds: [],
+    technologyIds: [],
     isUnique: false,
   });
   
   newFiles.value = [];
   imagePreviews.value = [];
   existingImages.value = [];
+  selectedTechnologies.value.clear();
   
   selectedPreviewIndex.value = null;
   
@@ -235,7 +286,21 @@ async function fetchItemData() {
     itemData.amountAvailable = item.amountAvailable ?? null;
     itemData.categoryIds = item.categories?.map(c => c.id) || [];
     itemData.materialIds = item.materials?.map(m => m.id) || []; 
+    itemData.technologyIds = item.technologies?.map(t => t.id) || [];
     itemData.isUnique = item.isUnique;
+
+    // Завантажуємо дані про технології з секціями
+    if (item.technologies && item.technologies.length > 0) {
+      item.technologies.forEach(tech => {
+        // Перевіряємо чи є в технології інформація про обрані секції
+        if (tech.selectedSections && Array.isArray(tech.selectedSections)) {
+          selectedTechnologies.value.set(tech.id, tech.selectedSections);
+        } else {
+          // Якщо немає інформації про секції, вибираємо всі
+          selectedTechnologies.value.set(tech.id, []);
+        }
+      });
+    }
 
     existingImages.value = item.images || [];
     imagePreviews.value = item.images.map(img => `${API_URL}/items/${item.id}/images/${img.id}`);
@@ -249,6 +314,7 @@ async function fetchItemData() {
 onMounted(async () => {  
   await categoriesStore.fetchCategories();
   await materialsStore.fetchMaterials();
+  await technologiesStore.fetchTechnologies();
     if (isEditMode.value) {
         await fetchItemData();
     }
@@ -283,6 +349,61 @@ function selectImage(index: number) {
   selectedPreviewIndex.value = (selectedPreviewIndex.value === index) ? null : index;
 }
 
+// Функції для роботи з технологіями та секціями
+function getTechnologySections(tech: any): Array<{ title: string; content: string }> {
+  if (!tech.description) return [];
+  try {
+    const parsed = JSON.parse(tech.description);
+    if (typeof parsed === 'object' && Array.isArray(parsed.sections)) {
+      return parsed.sections;
+    }
+  } catch {
+    return [];
+  }
+  return [];
+}
+
+function isTechnologySelected(techId: string): boolean {
+  return selectedTechnologies.value.has(techId);
+}
+
+function isSectionSelected(techId: string, sectionIndex: number): boolean {
+  const sections = selectedTechnologies.value.get(techId);
+  return sections ? sections.includes(sectionIndex) : false;
+}
+
+function toggleTechnology(techId: string, selected: boolean) {
+  if (selected) {
+    // Додаємо технологію з порожнім масивом секцій (всі секції)
+    selectedTechnologies.value.set(techId, []);
+  } else {
+    // Видаляємо технологію
+    selectedTechnologies.value.delete(techId);
+  }
+}
+
+function toggleSection(techId: string, sectionIndex: number, selected: boolean) {
+  if (!selectedTechnologies.value.has(techId)) {
+    // Якщо технологія не вибрана, спочатку вибираємо її
+    selectedTechnologies.value.set(techId, []);
+  }
+  
+  const sections = selectedTechnologies.value.get(techId)!;
+  
+  if (selected) {
+    // Додаємо секцію, якщо її ще немає
+    if (!sections.includes(sectionIndex)) {
+      sections.push(sectionIndex);
+    }
+  } else {
+    // Видаляємо секцію
+    const index = sections.indexOf(sectionIndex);
+    if (index > -1) {
+      sections.splice(index, 1);
+    }
+  }
+}
+
 function deleteSelectedImage() {
   if (selectedPreviewIndex.value === null) return;
   
@@ -315,6 +436,14 @@ async function handleSubmit() {
   if (itemData.amountAvailable !== null) formData.append('amountAvailable', String(itemData.amountAvailable));
   formData.append('categoryIds', JSON.stringify(itemData.categoryIds));
   formData.append('materialIds', JSON.stringify(itemData.materialIds));
+  
+  // Конвертуємо Map в об'єкт для серіалізації
+  const technologiesData: Record<string, number[]> = {};
+  selectedTechnologies.value.forEach((sections, techId) => {
+    technologiesData[techId] = sections;
+  });
+  formData.append('technologiesData', JSON.stringify(technologiesData));
+  
   formData.append('isUnique', String(itemData.isUnique));
 
   newFiles.value.forEach(file => {

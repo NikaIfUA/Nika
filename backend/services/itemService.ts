@@ -89,6 +89,7 @@ class ItemService {
       const amountAvailable = Number(formData.get("amountAvailable"));
       const categoryIds: string[] = JSON.parse(formData.get("categoryIds") as string || '[]');
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
+      const technologiesData: Record<string, number[]> = JSON.parse(formData.get("technologiesData") as string || '{}');
       const isUnique = formData.get("isUnique") === 'true';
 
       if (!files || files.length === 0) {
@@ -108,6 +109,12 @@ class ItemService {
         price: isNaN(price) ? null : price,
         amountAvailable: isNaN(amountAvailable) ? null : amountAvailable,
         materials: materialIds.map(id => ({ id, name: "", slug: "" })),
+        technologies: Object.keys(technologiesData).map(id => ({ 
+          id, 
+          name: "", 
+          slug: "", 
+          selectedSections: technologiesData[id] 
+        })),
         images: preparedImages,
         coverImage: preparedImages.length > 0 ? preparedImages[0].id : '',
         isUnique: isUnique,
@@ -188,6 +195,7 @@ class ItemService {
       const amountAvailable = Number(formData.get("amountAvailable"));
       const categoryIds: string[] = JSON.parse(formData.get("categoryIds") as string || '[]');
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
+      const technologiesData: Record<string, number[]> = JSON.parse(formData.get("technologiesData") as string || '{}');
       const existingImageIds: string[] = JSON.parse(formData.get("existingImageIds") as string || '[]');
       const isUniqueStr = formData.get("isUnique") as string | null;
       const isUnique = isUniqueStr !== null ? isUniqueStr === 'true' : existingItem.isUnique;
@@ -206,6 +214,14 @@ class ItemService {
         price: isNaN(price) ? existingItem.price : price,
         amountAvailable: amountAvailable,
         materials: materialIds.length > 0 ? materialIds.map(id => ({ id, name: "", slug: "" })) : existingItem.materials,
+        technologies: Object.keys(technologiesData).length > 0 
+          ? Object.keys(technologiesData).map(id => ({ 
+              id, 
+              name: "", 
+              slug: "", 
+              selectedSections: technologiesData[id] 
+            })) 
+          : existingItem.technologies,
         images: [...(existingItem.images.filter(img => existingImageIds.includes(img.id))), ...preparedImages],
         coverImage: existingItem.coverImage,
         isUnique: isUnique,

@@ -28,10 +28,10 @@ onMounted(() => {
 });
 
 function navigateToCreatePage() {
-  router.push('/admin/item/new');
+  router.push('/admin/items/new');
 }
 
 function handleAdminRowClick(item: IItem) {
-  router.push(`/admin/item/${item.id}`);
+  router.push(`/admin/items/${item.id}`);
 }
 </script>

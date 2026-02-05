@@ -43,7 +43,8 @@
           <p v-if="item.categories?.length">Категорія: <strong>{{ item.categories.map(c => c.name).join(', ') }}</strong></p>
           <p v-if="item.price !== null && item.price !== 0">Ціна: <strong>{{ item.price }}</strong> грн</p>
           <p v-if="item.amountAvailable !== null && item.amountAvailable !== 0">Кількість: <strong>{{ item.amountAvailable }}</strong></p>
-          <p v-if="item.materials?.length">Матеріали: <strong>{{ item.materials.map(m => m.name).join(', ') }}</strong></p>
+          <p v-if="item.materials?.length">Матеріали: <LinkableItemsList :items="item.materials" item-type="material" /></p>
+          <p v-if="item.technologies?.length">Технології: <LinkableItemsList :items="item.technologies" item-type="technology" /></p>
         </div>
       </div>
     </div>
@@ -54,6 +55,7 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import type { IItem } from '@/interfaces'; 
 import mainApi from '@/api/main.api';
+import LinkableItemsList from '@/components/shared/LinkableItemsList.vue';
 
 const props = defineProps<{ itemId?: string }>();
 const emit = defineEmits<{ (e: 'close'): void }>();

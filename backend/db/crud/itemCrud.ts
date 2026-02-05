@@ -1,9 +1,9 @@
 import { getDbInstance } from '../connection.ts';
-import { items, images, categories, materials, imageMaterials, categoryItems } from '../schema.ts';
+import { items, images, categories, materials, technologies, imageMaterials, categoryItems, itemTechnologies } from '../schema.ts';
 import * as schema from '../schema.ts';
 import { eq, inArray, and } from 'npm:drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { IItem, ICategory, IMaterial, IImage } from '../../Interfaces.ts';
+import type { IItem, ICategory, IMaterial, ITechnology, IImage } from '../../Interfaces.ts';
 
 export default class Database {
   private db: NodePgDatabase<typeof schema>;
@@ -50,6 +50,17 @@ export default class Database {
           category_id: cat.id,
         }));
         await tx.insert(categoryItems).values(categoryLinks);
+      }
+
+      const newTechnologies = itemData.technologies;
+      if (newTechnologies && newTechnologies.length > 0) {
+        const technologyLinks = newTechnologies.map(tech => ({
+          id: globalThis.crypto.randomUUID(),
+          item_id: newItemId,
+          technology_id: tech.id,
+          selected_sections: tech.selectedSections || null,
+        }));
+        await tx.insert(itemTechnologies).values(technologyLinks);
       }
 
       const newImages = itemData.images;
@@ -120,8 +131,33 @@ export default class Database {
       const categoryData = categoriesMap.get(relation.category_id);
       if (categoryData) {
         const existing = categoriesByItemId.get(relation.item_id) ?? [];
-        existing.push({ id: categoryData.id, name: categoryData.name });
+        existing.push({ id: categoryData.id, name: categoryData.name, slug: categoryData.slug });
         categoriesByItemId.set(relation.item_id, existing);
+      }
+    }
+
+    const technologyRelations = await this.db.select()
+      .from(itemTechnologies)
+      .where(inArray(itemTechnologies.item_id, itemIds));
+    const allTechnologyIds = [...new Set(technologyRelations.map(rel => rel.technology_id))];
+    const allTechnologies = allTechnologyIds.length > 0
+      ? await this.db.select().from(technologies).where(inArray(technologies.id, allTechnologyIds))
+      : [];
+    const technologiesMap = new Map(allTechnologies.map(tech => [tech.id, tech]));
+
+    const technologiesByItemId = new Map<string, ITechnology[]>();
+    for (const relation of technologyRelations) {
+      const technologyData = technologiesMap.get(relation.technology_id);
+      if (technologyData) {
+        const existing = technologiesByItemId.get(relation.item_id) ?? [];
+        existing.push({ 
+          id: technologyData.id, 
+          name: technologyData.name, 
+          slug: technologyData.slug,
+          description: technologyData.description ?? undefined,
+          selectedSections: relation.selected_sections as number[] | undefined
+        });
+        technologiesByItemId.set(relation.item_id, existing);
       }
     }
 
@@ -151,7 +187,7 @@ export default class Database {
 
       const itemImages: IImage[] = itemImageRecords.map(imgRecord => {
         (materialsByImageId.get(imgRecord.id) || []).forEach(mat => {
-          allMaterialsForItem.set(mat.id, { id: mat.id, name: mat.name });
+          allMaterialsForItem.set(mat.id, { id: mat.id, name: mat.name, slug: mat.slug });
         });
 
         return {
@@ -165,6 +201,7 @@ export default class Database {
       });
 
       const itemCategories: ICategory[] = categoriesByItemId.get(row.id) || [];
+      const itemTechnologies: ITechnology[] = technologiesByItemId.get(row.id) || [];
 
       const item: IItem = {
         id: row.id,
@@ -176,6 +213,7 @@ export default class Database {
         images: itemImages,
         categories: itemCategories,
         materials: Array.from(allMaterialsForItem.values()),
+        technologies: itemTechnologies,
         isUnique: row.isUnique,
       };
 
@@ -204,6 +242,19 @@ export default class Database {
           category_id: cat.id,
         }));
         await tx.insert(categoryItems).values(categoryLinks);
+      }
+
+      await tx.delete(itemTechnologies).where(eq(itemTechnologies.item_id, id));
+
+      const newTechnologies = itemData.technologies;
+      if (newTechnologies && newTechnologies.length > 0) {
+        const technologyLinks = newTechnologies.map(tech => ({
+          id: globalThis.crypto.randomUUID(),
+          item_id: id,
+          technology_id: tech.id,
+          selected_sections: tech.selectedSections || null,
+        }));
+        await tx.insert(itemTechnologies).values(technologyLinks);
       }
       
       const existingImages = await tx.select({ id: images.id }).from(images).where(eq(images.item_id, id));
