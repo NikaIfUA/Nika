@@ -89,6 +89,8 @@ class ItemService {
       const amountAvailable = Number(formData.get("amountAvailable"));
       const categoryIds: string[] = JSON.parse(formData.get("categoryIds") as string || '[]');
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
+      const categoriesData: Record<string, number[]> = JSON.parse(formData.get("categoriesData") as string || '{}');
+      const materialsData: Record<string, number[]> = JSON.parse(formData.get("materialsData") as string || '{}');
       const technologiesData: Record<string, number[]> = JSON.parse(formData.get("technologiesData") as string || '{}');
       const isUnique = formData.get("isUnique") === 'true';
 
@@ -101,14 +103,27 @@ class ItemService {
       const imageSavePromises = files.map(file => ImageService.saveImage(file, description));
       const preparedImages: IImage[] = await Promise.all(imageSavePromises);
 
+      const resolvedCategoryIds = Object.keys(categoriesData).length > 0 ? Object.keys(categoriesData) : categoryIds;
+      const resolvedMaterialIds = Object.keys(materialsData).length > 0 ? Object.keys(materialsData) : materialIds;
+
       const newItemData: IItem = {
         id: globalThis.crypto.randomUUID(),
         title: title,
         description: description,
-        categories: categoryIds.map(id => ({ id, name: "", slug: "" })),
+        categories: resolvedCategoryIds.map(id => ({
+          id,
+          name: "",
+          slug: "",
+          selectedSections: categoriesData[id]
+        })),
         price: isNaN(price) ? null : price,
         amountAvailable: isNaN(amountAvailable) ? null : amountAvailable,
-        materials: materialIds.map(id => ({ id, name: "", slug: "" })),
+        materials: resolvedMaterialIds.map(id => ({
+          id,
+          name: "",
+          slug: "",
+          selectedSections: materialsData[id]
+        })),
         technologies: Object.keys(technologiesData).map(id => ({ 
           id, 
           name: "", 
@@ -195,6 +210,8 @@ class ItemService {
       const amountAvailable = Number(formData.get("amountAvailable"));
       const categoryIds: string[] = JSON.parse(formData.get("categoryIds") as string || '[]');
       const materialIds: string[] = JSON.parse(formData.get("materialIds") as string || '[]');
+      const categoriesData: Record<string, number[]> = JSON.parse(formData.get("categoriesData") as string || '{}');
+      const materialsData: Record<string, number[]> = JSON.parse(formData.get("materialsData") as string || '{}');
       const technologiesData: Record<string, number[]> = JSON.parse(formData.get("technologiesData") as string || '{}');
       const existingImageIds: string[] = JSON.parse(formData.get("existingImageIds") as string || '[]');
       const isUniqueStr = formData.get("isUnique") as string | null;
@@ -206,14 +223,27 @@ class ItemService {
         preparedImages = await Promise.all(imageSavePromises);
       }
 
+      const resolvedCategoryIds = Object.keys(categoriesData).length > 0 ? Object.keys(categoriesData) : categoryIds;
+      const resolvedMaterialIds = Object.keys(materialsData).length > 0 ? Object.keys(materialsData) : materialIds;
+
       const updatedItemData: IItem = {
         id: itemId,
         title: title || existingItem.title,
         description: description || existingItem.description,
-        categories: categoryIds.map(id => ({ id, name: "", slug: "" })) || existingItem.categories,
+        categories: resolvedCategoryIds.map(id => ({
+          id,
+          name: "",
+          slug: "",
+          selectedSections: categoriesData[id]
+        })) || existingItem.categories,
         price: isNaN(price) ? existingItem.price : price,
         amountAvailable: amountAvailable,
-        materials: materialIds.length > 0 ? materialIds.map(id => ({ id, name: "", slug: "" })) : existingItem.materials,
+        materials: resolvedMaterialIds.length > 0 ? resolvedMaterialIds.map(id => ({
+          id,
+          name: "",
+          slug: "",
+          selectedSections: materialsData[id]
+        })) : existingItem.materials,
         technologies: Object.keys(technologiesData).length > 0 
           ? Object.keys(technologiesData).map(id => ({ 
               id, 

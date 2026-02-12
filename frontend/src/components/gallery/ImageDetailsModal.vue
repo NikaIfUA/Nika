@@ -40,11 +40,12 @@
         <div class="meta">
           <h2>{{ item.title }}</h2>
           <p v-if="item.description">{{ item.description }}</p>
-          <p v-if="item.categories?.length">Категорія: <strong>{{ item.categories.map(c => c.name).join(', ') }}</strong></p>
+          <p v-if="item.categories?.length">Категорії: <LinkableItemsList :items="item.categories" item-type="category" /></p>
           <p v-if="item.price !== null && item.price !== 0">Ціна: <strong>{{ item.price }}</strong> грн</p>
           <p v-if="item.amountAvailable !== null && item.amountAvailable !== 0">Кількість: <strong>{{ item.amountAvailable }}</strong></p>
           <p v-if="item.materials?.length">Матеріали: <LinkableItemsList :items="item.materials" item-type="material" /></p>
           <p v-if="item.technologies?.length">Технології: <LinkableItemsList :items="item.technologies" item-type="technology" /></p>
+          <router-link class="user-guide-link" :to="{ name: 'info' }">Довідка користувача</router-link>
         </div>
       </div>
     </div>
@@ -206,6 +207,17 @@ onUnmounted(() => {
 }
 .meta h2 { margin: 0 0 0.5rem 0; }
 .meta p { margin: 0.25rem 0; }
+
+.user-guide-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.user-guide-link:hover {
+  text-decoration: underline;
+}
 
 .nav-arrow {
   top: 50%;

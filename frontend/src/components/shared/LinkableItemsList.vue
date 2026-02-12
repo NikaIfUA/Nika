@@ -14,8 +14,8 @@
             <span class="item-name">{{ item.name }}</span>
           </span>
           
-          <!-- Секції технології -->
-          <span v-if="itemType === 'technology' && hasSections(item)" class="sections-list">
+          <!-- Секції -->
+          <span v-if="hasSections(item)" class="sections-list">
             (<template v-for="(sectionIndex, i) in getSelectedSections(item)" :key="sectionIndex">
               <router-link
                 :to="{
@@ -40,11 +40,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import type { IMaterial, ITechnology } from '@/interfaces';
+import type { ICategory, IMaterial, ITechnology } from '@/interfaces';
 
 interface Props {
-  items?: IMaterial[] | ITechnology[];
-  itemType: 'material' | 'technology';
+  items?: ICategory[] | IMaterial[] | ITechnology[];
+  itemType: 'material' | 'technology' | 'category';
 }
 
 const props = withDefaults(defineProps<Props>(), {});
@@ -92,8 +92,13 @@ function getSectionId(item: any, sectionIndex: number): string {
 
 onMounted(() => {
   if (itemsWithoutSlug.value.length > 0) {
+    const label = props.itemType === 'material'
+      ? 'Матеріали'
+      : props.itemType === 'category'
+        ? 'Категорії'
+        : 'Технології';
     console.warn(
-      `[⚠️  LinkableItemsList] ${props.itemType === 'material' ? 'Матеріали' : 'Технології'} без slug:`,
+      `[⚠️  LinkableItemsList] ${label} без slug:`,
       itemsWithoutSlug.value
     );
   }

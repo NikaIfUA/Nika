@@ -50,7 +50,15 @@
     </v-row>
     
     <v-divider class="my-6" />
-
+      <v-col cols="12">
+        <v-switch
+          v-model="itemData.isUnique"
+          color="primary"
+          label="Персоналізований товар"
+          inset
+          hide-details
+        />
+      </v-col>
     <v-row>
       <v-col cols="12" md="6">
         <v-text-field
@@ -77,21 +85,7 @@
           variant="outlined"
         />
       </v-col>
-      <v-col cols="12" md="6">
-        <v-select
-          v-model="itemData.categoryIds"
-          :items="categories"
-          item-title="name"
-          item-value="id"
-          label="Категорії"
-          variant="outlined"
-          multiple
-          chips
-          closable-chips
-        />
-      </v-col>
-
-      <v-col cols="12" md="6">
+      <v-col cols="12">
         <v-text-field
           v-model.number="itemData.amountAvailable"
           label="Кількість в наявності"
@@ -101,28 +95,89 @@
           :readonly="itemData.isUnique"
         />
       </v-col>
-      <v-col cols="12" md="6">
-        <v-switch
-          v-model="itemData.isUnique"
-          color="primary"
-          label="Персоналізований товар"
-          inset
-          hide-details
-        />
+
+      <v-col cols="12">
+        <div class="mb-2 font-weight-medium">Категорії та підкатегорії:</div>
+        <v-expansion-panels v-if="categories.length > 0">
+          <v-expansion-panel
+            v-for="category in categories"
+            :key="category.id"
+          >
+            <v-expansion-panel-title>
+              <v-checkbox
+                :model-value="isCategorySelected(category.id)"
+                @update:model-value="toggleCategory(category.id, !!$event)"
+                @click.stop
+                :label="category.name"
+                hide-details
+                density="compact"
+              />
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div v-if="getItemSections(category).length > 0" class="pl-4">
+                <div class="text-caption mb-2">Оберіть конкретні підкатегорії (необов'язково):</div>
+                <v-checkbox
+                  v-for="(section, index) in getItemSections(category)"
+                  :key="index"
+                  :model-value="isCategorySectionSelected(category.id, index)"
+                  @update:model-value="toggleCategorySection(category.id, index, !!$event)"
+                  :label="section.title || `Секція ${index + 1}`"
+                  hide-details
+                  density="compact"
+                  class="mb-1"
+                />
+              </div>
+              <div v-else class="text-caption text-grey pl-4">
+                У цієї категорії немає секцій
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+        <div v-else class="text-caption text-grey">
+          Категорії не знайдено
+        </div>
       </v-col>
       
       <v-col cols="12">
-        <v-select
-          v-model="itemData.materialIds"
-          :items="materials"
-          item-title="name"
-          item-value="id"
-          label="Матеріали"
-          multiple
-          chips
-          closable-chips
-          variant="outlined"
-        />
+        <div class="mb-2 font-weight-medium">Матеріали та варіанти:</div>
+        <v-expansion-panels v-if="materials.length > 0">
+          <v-expansion-panel
+            v-for="material in materials"
+            :key="material.id"
+          >
+            <v-expansion-panel-title>
+              <v-checkbox
+                :model-value="isMaterialSelected(material.id)"
+                @update:model-value="toggleMaterial(material.id, !!$event)"
+                @click.stop
+                :label="material.name"
+                hide-details
+                density="compact"
+              />
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+              <div v-if="getItemSections(material).length > 0" class="pl-4">
+                <div class="text-caption mb-2">Оберіть конкретні варіанти (необов'язково):</div>
+                <v-checkbox
+                  v-for="(section, index) in getItemSections(material)"
+                  :key="index"
+                  :model-value="isMaterialSectionSelected(material.id, index)"
+                  @update:model-value="toggleMaterialSection(material.id, index, !!$event)"
+                  :label="section.title || `Секція ${index + 1}`"
+                  hide-details
+                  density="compact"
+                  class="mb-1"
+                />
+              </div>
+              <div v-else class="text-caption text-grey pl-4">
+                У цього матеріалу немає секцій
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
+        <div v-else class="text-caption text-grey">
+          Матеріали не знайдено
+        </div>
       </v-col>
       
       <v-col cols="12">
@@ -143,10 +198,10 @@
               />
             </v-expansion-panel-title>
             <v-expansion-panel-text>
-              <div v-if="getTechnologySections(tech).length > 0" class="pl-4">
+              <div v-if="getItemSections(tech).length > 0" class="pl-4">
                 <div class="text-caption mb-2">Оберіть конкретні секції (необов'язково):</div>
                 <v-checkbox
-                  v-for="(section, index) in getTechnologySections(tech)"
+                  v-for="(section, index) in getItemSections(tech)"
                   :key="index"
                   :model-value="isSectionSelected(tech.id, index)"
                   @update:model-value="toggleSection(tech.id, index, !!$event)"
@@ -230,6 +285,8 @@ const itemData = reactive({
 
 // Нова структура для зберігання технологій з секціями
 const selectedTechnologies = ref<Map<string, number[]>>(new Map());
+const selectedCategories = ref<Map<string, number[]>>(new Map());
+const selectedMaterials = ref<Map<string, number[]>>(new Map());
 // Map: technologyId -> array of section indices (empty array = всі секції)
 
 const newFiles = ref<File[]>([]);
@@ -265,6 +322,8 @@ function resetState() {
   imagePreviews.value = [];
   existingImages.value = [];
   selectedTechnologies.value.clear();
+  selectedCategories.value.clear();
+  selectedMaterials.value.clear();
   
   selectedPreviewIndex.value = null;
   
@@ -288,6 +347,28 @@ async function fetchItemData() {
     itemData.materialIds = item.materials?.map(m => m.id) || []; 
     itemData.technologyIds = item.technologies?.map(t => t.id) || [];
     itemData.isUnique = item.isUnique;
+
+    selectedCategories.value.clear();
+    if (item.categories && item.categories.length > 0) {
+      item.categories.forEach(category => {
+        if (category.selectedSections && Array.isArray(category.selectedSections)) {
+          selectedCategories.value.set(category.id, category.selectedSections);
+        } else {
+          selectedCategories.value.set(category.id, []);
+        }
+      });
+    }
+
+    selectedMaterials.value.clear();
+    if (item.materials && item.materials.length > 0) {
+      item.materials.forEach(material => {
+        if (material.selectedSections && Array.isArray(material.selectedSections)) {
+          selectedMaterials.value.set(material.id, material.selectedSections);
+        } else {
+          selectedMaterials.value.set(material.id, []);
+        }
+      });
+    }
 
     // Завантажуємо дані про технології з секціями
     if (item.technologies && item.technologies.length > 0) {
@@ -350,10 +431,10 @@ function selectImage(index: number) {
 }
 
 // Функції для роботи з технологіями та секціями
-function getTechnologySections(tech: any): Array<{ title: string; content: string }> {
-  if (!tech.description) return [];
+function getItemSections(item: any): Array<{ title: string; content: string }> {
+  if (!item.description) return [];
   try {
-    const parsed = JSON.parse(tech.description);
+    const parsed = JSON.parse(item.description);
     if (typeof parsed === 'object' && Array.isArray(parsed.sections)) {
       return parsed.sections;
     }
@@ -404,6 +485,78 @@ function toggleSection(techId: string, sectionIndex: number, selected: boolean) 
   }
 }
 
+function isCategorySelected(categoryId: string): boolean {
+  return selectedCategories.value.has(categoryId);
+}
+
+function isCategorySectionSelected(categoryId: string, sectionIndex: number): boolean {
+  const sections = selectedCategories.value.get(categoryId);
+  return sections ? sections.includes(sectionIndex) : false;
+}
+
+function toggleCategory(categoryId: string, selected: boolean) {
+  if (selected) {
+    selectedCategories.value.set(categoryId, []);
+  } else {
+    selectedCategories.value.delete(categoryId);
+  }
+}
+
+function toggleCategorySection(categoryId: string, sectionIndex: number, selected: boolean) {
+  if (!selectedCategories.value.has(categoryId)) {
+    selectedCategories.value.set(categoryId, []);
+  }
+
+  const sections = selectedCategories.value.get(categoryId)!;
+
+  if (selected) {
+    if (!sections.includes(sectionIndex)) {
+      sections.push(sectionIndex);
+    }
+  } else {
+    const index = sections.indexOf(sectionIndex);
+    if (index > -1) {
+      sections.splice(index, 1);
+    }
+  }
+}
+
+function isMaterialSelected(materialId: string): boolean {
+  return selectedMaterials.value.has(materialId);
+}
+
+function isMaterialSectionSelected(materialId: string, sectionIndex: number): boolean {
+  const sections = selectedMaterials.value.get(materialId);
+  return sections ? sections.includes(sectionIndex) : false;
+}
+
+function toggleMaterial(materialId: string, selected: boolean) {
+  if (selected) {
+    selectedMaterials.value.set(materialId, []);
+  } else {
+    selectedMaterials.value.delete(materialId);
+  }
+}
+
+function toggleMaterialSection(materialId: string, sectionIndex: number, selected: boolean) {
+  if (!selectedMaterials.value.has(materialId)) {
+    selectedMaterials.value.set(materialId, []);
+  }
+
+  const sections = selectedMaterials.value.get(materialId)!;
+
+  if (selected) {
+    if (!sections.includes(sectionIndex)) {
+      sections.push(sectionIndex);
+    }
+  } else {
+    const index = sections.indexOf(sectionIndex);
+    if (index > -1) {
+      sections.splice(index, 1);
+    }
+  }
+}
+
 function deleteSelectedImage() {
   if (selectedPreviewIndex.value === null) return;
   
@@ -434,8 +587,23 @@ async function handleSubmit() {
   formData.append('description', itemData.description || '');
   if (itemData.price !== null) formData.append('price', String(itemData.price));
   if (itemData.amountAvailable !== null) formData.append('amountAvailable', String(itemData.amountAvailable));
-  formData.append('categoryIds', JSON.stringify(itemData.categoryIds));
-  formData.append('materialIds', JSON.stringify(itemData.materialIds));
+  const categoryIds = Array.from(selectedCategories.value.keys());
+  const materialIds = Array.from(selectedMaterials.value.keys());
+  itemData.categoryIds = categoryIds;
+  itemData.materialIds = materialIds;
+  formData.append('categoryIds', JSON.stringify(categoryIds));
+  formData.append('materialIds', JSON.stringify(materialIds));
+
+  const categoriesData: Record<string, number[]> = {};
+  selectedCategories.value.forEach((sections, id) => {
+    categoriesData[id] = sections;
+  });
+  const materialsData: Record<string, number[]> = {};
+  selectedMaterials.value.forEach((sections, id) => {
+    materialsData[id] = sections;
+  });
+  formData.append('categoriesData', JSON.stringify(categoriesData));
+  formData.append('materialsData', JSON.stringify(materialsData));
   
   // Конвертуємо Map в об'єкт для серіалізації
   const technologiesData: Record<string, number[]> = {};

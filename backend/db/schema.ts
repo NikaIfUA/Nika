@@ -43,6 +43,7 @@ export const categoryItems = table('category_items', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   category_id: t.varchar('category_id', { length: 50 }).notNull().references(() => categories.id, { onDelete: 'cascade' }),
   item_id: t.varchar('item_id', { length: 50 }).notNull().references(() => items.id, { onDelete: 'cascade' }),
+  selected_sections: t.json('selected_sections').$type<number[]>(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -61,6 +62,7 @@ export const imageMaterials = table('image_materials', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   image_id: t.varchar('image_id', { length: 50 }).notNull().references(() => images.id, { onDelete: 'cascade' }),
   material_id: t.varchar('material_id', { length: 50 }).notNull().references(() => materials.id, { onDelete: 'cascade' }),
+  selected_sections: t.json('selected_sections').$type<number[]>(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

@@ -1,31 +1,24 @@
 import { RouterContext } from '../dependencies.ts';
 import { createMaterial, deleteMaterial, getMaterials, updateMaterial } from '../db/crud/materialCrud.ts';
 import { generateSlug, createWithUniqueSlug } from '../util/slug.ts';
+import ImageService from './imageService.ts';
+import { IImage } from '../Interfaces.ts';
+import ImageCrud from '../db/crud/imageCrud.ts';
 
 class MaterialService {
   public static async saveMaterial({ request, response }: RouterContext<string>): Promise<void> {
     try {
-      // Require JSON payload for this endpoint
-      const contentType = request.headers.get('content-type') ?? '';
-      if (!contentType.includes('application/json')) {
+      const body = request.body;
+      if (body.type() !== "form-data") {
         response.status = 415;
-        response.body = { error: 'Unsupported Media Type. Expected application/json' };
+        response.body = { error: 'Unsupported Media Type. Expected multipart/form-data' };
         return;
       }
 
-      const body = request.body;
-      let name = '';
-      let description = '';
-      try {
-        const txt = await body.text();
-        const parsed = txt ? JSON.parse(txt) : {};
-        name = parsed?.name ? String(parsed.name) : '';
-        description = parsed?.description ? String(parsed.description) : '';
-      } catch (_e) {
-        response.status = 400;
-        response.body = { error: 'Invalid JSON payload' };
-        return;
-      }
+      const formData = await body.formData();
+      const name = formData.get("name") as string;
+      const description = formData.get("description") as string | undefined;
+      const imageFile = formData.get("image") as File | null;
 
       if (!name || !name.trim()) {
         response.status = 400;
@@ -41,13 +34,21 @@ class MaterialService {
         return;
       }
 
+      let materialImage: IImage | null = null;
+      if (imageFile) {
+        const imageData = await ImageService.saveImage(imageFile, description);
+        const imageCrud = new ImageCrud();
+        materialImage = await imageCrud.createImage(imageData);
+      }
+
       const newMaterial = await createWithUniqueSlug(
         slug,
         (finalSlug) => createMaterial({
           id: globalThis.crypto.randomUUID(),
           name: name.trim(),
           slug: finalSlug,
-          description: description && description.trim() ? description.trim() : undefined
+          description: description && description.trim() ? description.trim() : undefined,
+          imageId: materialImage?.id
         })
       );
 
@@ -83,7 +84,16 @@ class MaterialService {
     try {
       const materialId = params.id;
       const body = request.body;
-      const { name, description } = await body.json();
+      if (body.type() !== "form-data") {
+        response.status = 415;
+        response.body = { error: 'Unsupported Media Type. Expected multipart/form-data' };
+        return;
+      }
+
+      const formData = await body.formData();
+      const name = formData.get("name") as string;
+      const description = formData.get("description") as string | undefined;
+      const imageFile = formData.get("image") as File | null;
 
       if (!name || !name.trim()) {
         response.status = 400;
@@ -91,10 +101,23 @@ class MaterialService {
         return;
       }
 
-      const updatedMaterial = await updateMaterial(materialId, { 
+      let materialImage: IImage | undefined;
+      if (imageFile) {
+        const imageData = await ImageService.saveImage(imageFile, description);
+        const imageCrud = new ImageCrud();
+        materialImage = await imageCrud.createImage(imageData);
+      }
+
+      const updateData: any = {
         name: name.trim(),
-        description: description ? description.trim() : undefined
-      });
+        description: description && description.trim() ? description.trim() : undefined
+      };
+
+      if (materialImage) {
+        updateData.imageId = materialImage.id;
+      }
+
+      const updatedMaterial = await updateMaterial(materialId, updateData);
 
       if (!updatedMaterial) {
         response.status = 404;
@@ -118,13 +141,14 @@ class MaterialService {
 
       const success = await deleteMaterial(materialId);
 
-      if (success) {
+      if (!success) {
         response.status = 404;
         response.body = { error: 'Material not found' };
         return;
       }
 
-      response.status = 204;
+      response.status = 200;
+      response.body = { message: "Material deleted successfully" };
 
     } catch (err) {
       console.error('deleteMaterial error:', err);
