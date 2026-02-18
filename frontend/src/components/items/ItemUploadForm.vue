@@ -435,8 +435,13 @@ function getItemSections(item: any): Array<{ title: string; content: string }> {
   if (!item.description) return [];
   try {
     const parsed = JSON.parse(item.description);
-    if (typeof parsed === 'object' && Array.isArray(parsed.sections)) {
+    // Новий формат {general, sections}
+    if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
       return parsed.sections;
+    }
+    // Старий формат - просто масив секцій
+    if (Array.isArray(parsed)) {
+      return parsed;
     }
   } catch {
     return [];

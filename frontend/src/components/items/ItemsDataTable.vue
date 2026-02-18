@@ -86,6 +86,11 @@
         <span v-else class="text-grey">—</span>
       </template>
 
+      <template v-slot:item.description="{ item }">
+        <span v-if="item.description" class="text-truncate">{{ formatDescription(item.description) }}</span>
+        <span v-else class="text-grey">—</span>
+      </template>
+
       <template v-slot:item.price="{ item }">
         <span v-if="item.price != null && item.price > 0">{{ formatPrice(item.price) }}</span>
         <span v-else class="text-grey">—</span>
@@ -181,6 +186,51 @@ const tableHeaders = computed(() => {
 
 function handleRowClick(event: Event, { item }: { item: IItem }) {
   emit('item-click', item);
+}
+
+function formatDescription(description: string | null | undefined): string {
+  if (!description) return '';
+  
+  try {
+    const parsed = JSON.parse(description);
+    
+    // Якщо це об'єкт з general і sections
+    if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const parts: string[] = [];
+      
+      if (parsed.general && parsed.general.trim()) {
+        parts.push(parsed.general.trim());
+      }
+      
+      if (Array.isArray(parsed.sections) && parsed.sections.length > 0) {
+        const sectionTitles = parsed.sections
+          .map((s: any) => s.title)
+          .filter((t: string) => t && t.trim())
+          .join(', ');
+        if (sectionTitles) {
+          parts.push(sectionTitles);
+        }
+      }
+      
+      return parts.join('. ') || 'Опис доступний';
+    }
+    
+    // Якщо це масив секцій
+    if (Array.isArray(parsed)) {
+      const titles = parsed
+        .map((s: any) => s.title)
+        .filter((t: string) => t && t.trim())
+        .join(', ');
+      return titles || 'Опис доступний';
+    }
+  } catch {
+    // Якщо не JSON, повертаємо як є
+  }
+  
+  // Обрізаємо довгий текст
+  return description.length > 100 
+    ? description.substring(0, 100) + '...' 
+    : description;
 }
 
 function formatPrice(value: number): string {

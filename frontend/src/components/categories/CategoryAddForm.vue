@@ -181,9 +181,9 @@ function loadEditingCategory(category: ICategory) {
   if (category.description) {
     try {
       const parsed = JSON.parse(category.description);
-      if (typeof parsed === 'object' && parsed.general && Array.isArray(parsed.sections)) {
-        // Новий формат з загальним описом та секціями
-        generalDescription.value = parsed.general;
+      // Новий формат {general, sections}
+      if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
+        generalDescription.value = parsed.general || '';
         descriptionSections.value = parsed.sections;
       } else if (Array.isArray(parsed)) {
         // Старий формат - тільки секції

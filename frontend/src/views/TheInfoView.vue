@@ -1,11 +1,11 @@
 <template>
   <div class="reference-container">
-    <h1>Довідник матеріалів та технологій</h1>
+    <h1>Довідник категорій, матеріалів та технологій</h1>
     
     <div class="search-container">
       <BaseInput 
         v-model="searchQuery" 
-        placeholder="Введіть назву матеріалу або технології..."
+        placeholder="Введіть назву категорії, матеріалу або технології..."
         @input="handleSearch"
       />
     </div>
@@ -13,7 +13,7 @@
     <div class="reference-content">
       <!-- Combined Grid -->
       <div class="reference-section">
-        <h2>Матеріали та технології</h2>
+        <h2>Категорії, матеріали та технології</h2>
         <div v-if="allFilteredItems.length > 0" class="items-grid">
           <div 
             v-for="item in allFilteredItems" 
@@ -25,7 +25,7 @@
           </div>
         </div>
         <div v-else class="empty-state">
-          <p>Матеріали та технології не знайдені</p>
+          <p>Категорії, матеріали та технології не знайдені</p>
         </div>
       </div>
     </div>
@@ -36,14 +36,24 @@
   import { ref, computed, onMounted } from "vue";
   import { useRouter } from "vue-router";
   import mainApi from '@/api/main.api';
-  import type { IMaterial, ITechnology } from '@/interfaces';
+  import type { IMaterial, ITechnology, ICategory } from '@/interfaces';
   import BaseInput from '@/components/base/BaseInput.vue';
 
   const router = useRouter();
   const searchQuery = ref('');
   const materials = ref<IMaterial[]>([]);
   const technologies = ref<ITechnology[]>([]);
+  const categories = ref<ICategory[]>([]);
   const isLoading = ref(false);
+
+  const filteredCategories = computed(() => {
+    if (!searchQuery.value) {
+      return [...categories.value].sort((a, b) => a.name.localeCompare(b.name, 'uk'));
+    }
+    return categories.value
+      .filter(c => c.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name, 'uk'));
+  });
 
   const filteredMaterials = computed(() => {
     if (!searchQuery.value) {
@@ -65,6 +75,7 @@
 
   const allFilteredItems = computed(() => {
     const combined = [
+      ...filteredCategories.value.map(c => ({ ...c, type: 'category' as const })),
       ...filteredMaterials.value.map(m => ({ ...m, type: 'material' as const })),
       ...filteredTechnologies.value.map(t => ({ ...t, type: 'technology' as const }))
     ];
@@ -74,11 +85,15 @@
   const loadData = async () => {
     isLoading.value = true;
     try {
-      const [materialsRes, technologiesRes] = await Promise.all([
+      const [categoriesRes, materialsRes, technologiesRes] = await Promise.all([
+        mainApi.getAllCategories(),
         mainApi.getAllMaterials(),
         mainApi.getAllTechnologies(),
       ]);
 
+      if (categoriesRes.status === 200) {
+        categories.value = categoriesRes.data || [];
+      }
       if (materialsRes.status === 200) {
         materials.value = materialsRes.data || [];
       }

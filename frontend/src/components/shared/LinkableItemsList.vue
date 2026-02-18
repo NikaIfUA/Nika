@@ -66,8 +66,14 @@ function getSectionTitle(item: any, sectionIndex: number): string {
   if (!item.description) return `Секція ${sectionIndex + 1}`;
   try {
     const parsed = JSON.parse(item.description);
-    if (typeof parsed === 'object' && Array.isArray(parsed.sections)) {
+    // Новий формат {general, sections}
+    if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
       const section = parsed.sections[sectionIndex];
+      return section?.title || `Секція ${sectionIndex + 1}`;
+    }
+    // Старий формат - просто масив секцій
+    if (Array.isArray(parsed)) {
+      const section = parsed[sectionIndex];
       return section?.title || `Секція ${sectionIndex + 1}`;
     }
   } catch {
@@ -82,12 +88,12 @@ function getSectionId(item: any, sectionIndex: number): string {
     return title
       .toLowerCase()
       .replace(/\s+/g, '-')
-      .replace(/[^\w\-]+/g, '')
+      .replace(/[^a-zа-яїієґ0-9\-]+/gi, '')
       .replace(/\-\-+/g, '-')
       .replace(/^-+/, '')
       .replace(/-+$/, '');
   }
-  return `section-${sectionIndex}`;
+  return `${sectionIndex}`;
 }
 
 onMounted(() => {

@@ -91,9 +91,12 @@
     if (!item.value?.description) return [];
     try {
       const parsed = JSON.parse(item.value.description);
-      if (typeof parsed === 'object' && parsed.sections && Array.isArray(parsed.sections)) {
+      // Новий формат {general, sections}
+      if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
         return parsed.sections;
-      } else if (Array.isArray(parsed)) {
+      }
+      // Старий формат - просто масив секцій
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     } catch {
@@ -106,12 +109,17 @@
     if (!item.value?.description) return '';
     try {
       const parsed = JSON.parse(item.value.description);
-      if (typeof parsed === 'object' && parsed.general) {
-        return parsed.general;
+      // Новий формат {general, sections}
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed.general || '';
+      }
+      // Старий формат - масив секцій, немає загального опису
+      if (Array.isArray(parsed)) {
+        return '';
       }
     } catch {
       // Якщо не JSON, повертаємо весь опис як загальний
-      return item.value.description;
+      return item.value.description || '';
     }
     return '';
   });
@@ -124,12 +132,12 @@
       return section.title
         .toLowerCase()
         .replace(/\s+/g, '-')
-        .replace(/[^\w\-]+/g, '')
+        .replace(/[^a-zа-яїієґ0-9\-]+/gi, '')
         .replace(/\-\-+/g, '-')
         .replace(/^-+/, '')
         .replace(/-+$/, '');
     }
-    return `section-${index}`;
+    return `${index}`;
   };
 
   const getImageUrl = (image: any): string => {
