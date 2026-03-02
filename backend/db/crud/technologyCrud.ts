@@ -2,11 +2,13 @@ import { getDbInstance } from '../connection.ts';
 import { technologies, images } from '../schema.ts';
 import { eq } from 'npm:drizzle-orm';
 
-export async function createTechnology(data: { id: string; name: string; slug: string; description?: string; imageId?: string }) {
+export async function createTechnology(data: { id: string; name: string; slug: string; description?: string; imageId?: string; parentId?: string | null }) {
   const db = getDbInstance();
   const technologyData = {
     ...data,
     image_id: data.imageId,
+    parent_id: data.parentId,
+    parentId: undefined,
     imageId: undefined
   };
   const result = await db.insert(technologies).values(technologyData).returning().then((res) => res[0]);
@@ -59,15 +61,18 @@ async function fetchTechnologyWithImage(technologyId: string) {
   
   return {
     ...technology,
+    parentId: technology.parent_id ?? null,
     image: image
   };
 }
 
-export async function updateTechnology(id: string, data: { name?: string; description?: string; imageId?: string }) {
+export async function updateTechnology(id: string, data: { name?: string; description?: string; imageId?: string; parentId?: string | null }) {
   const db = getDbInstance();
   const updateData = {
     ...data,
     image_id: data.imageId,
+    parent_id: data.parentId,
+    parentId: undefined,
     imageId: undefined
   };
   await db.update(technologies).set(updateData).where(eq(technologies.id, id));

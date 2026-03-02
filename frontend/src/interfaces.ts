@@ -30,7 +30,6 @@ export interface ICategory {
   slug?: string;
   description?: string;
   image?: IImage | null;
-  selectedSections?: number[];
 }
 
 export interface IMaterial {
@@ -38,8 +37,8 @@ export interface IMaterial {
   name: string;
   slug?: string;
   description?: string;
+  parentId?: string | null;
   image?: IImage | null;
-  selectedSections?: number[];
 }
 
 export interface ITechnology {
@@ -47,8 +46,8 @@ export interface ITechnology {
   name: string;
   slug: string;
   description?: string;
+  parentId?: string | null;
   image?: IImage | null;
-  selectedSections?: number[]; // Indices of selected sections
 }
 
 export interface IUser {

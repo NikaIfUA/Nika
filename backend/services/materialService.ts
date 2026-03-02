@@ -18,7 +18,9 @@ class MaterialService {
       const formData = await body.formData();
       const name = formData.get("name") as string;
       const description = formData.get("description") as string | undefined;
+      const parentIdRaw = formData.get("parentId") as string | null;
       const imageFile = formData.get("image") as File | null;
+      const parentId = parentIdRaw && parentIdRaw.trim() ? parentIdRaw.trim() : null;
 
       if (!name || !name.trim()) {
         response.status = 400;
@@ -48,7 +50,8 @@ class MaterialService {
           name: name.trim(),
           slug: finalSlug,
           description: description && description.trim() ? description.trim() : undefined,
-          imageId: materialImage?.id
+          imageId: materialImage?.id,
+          parentId,
         })
       );
 
@@ -93,7 +96,9 @@ class MaterialService {
       const formData = await body.formData();
       const name = formData.get("name") as string;
       const description = formData.get("description") as string | undefined;
+      const parentIdRaw = formData.get("parentId") as string | null;
       const imageFile = formData.get("image") as File | null;
+      const parentId = parentIdRaw && parentIdRaw.trim() ? parentIdRaw.trim() : null;
 
       if (!name || !name.trim()) {
         response.status = 400;
@@ -110,7 +115,8 @@ class MaterialService {
 
       const updateData: any = {
         name: name.trim(),
-        description: description && description.trim() ? description.trim() : undefined
+        description: description && description.trim() ? description.trim() : undefined,
+        parentId,
       };
 
       if (materialImage) {

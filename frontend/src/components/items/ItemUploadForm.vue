@@ -97,7 +97,7 @@
       </v-col>
 
       <v-col cols="12">
-        <div class="mb-2 font-weight-medium">Категорії та підкатегорії:</div>
+        <div class="mb-2 font-weight-medium">Категорії:</div>
         <v-expansion-panels v-if="categories.length > 0">
           <v-expansion-panel
             v-for="category in categories"
@@ -113,24 +113,6 @@
                 density="compact"
               />
             </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <div v-if="getItemSections(category).length > 0" class="pl-4">
-                <div class="text-caption mb-2">Оберіть конкретні підкатегорії (необов'язково):</div>
-                <v-checkbox
-                  v-for="(section, index) in getItemSections(category)"
-                  :key="index"
-                  :model-value="isCategorySectionSelected(category.id, index)"
-                  @update:model-value="toggleCategorySection(category.id, index, !!$event)"
-                  :label="section.title || `Секція ${index + 1}`"
-                  hide-details
-                  density="compact"
-                  class="mb-1"
-                />
-              </div>
-              <div v-else class="text-caption text-grey pl-4">
-                У цієї категорії немає секцій
-              </div>
-            </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
         <div v-else class="text-caption text-grey">
@@ -139,7 +121,7 @@
       </v-col>
       
       <v-col cols="12">
-        <div class="mb-2 font-weight-medium">Матеріали та варіанти:</div>
+        <div class="mb-2 font-weight-medium">Матеріали:</div>
         <v-expansion-panels v-if="materials.length > 0">
           <v-expansion-panel
             v-for="material in materials"
@@ -155,24 +137,6 @@
                 density="compact"
               />
             </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <div v-if="getItemSections(material).length > 0" class="pl-4">
-                <div class="text-caption mb-2">Оберіть конкретні варіанти (необов'язково):</div>
-                <v-checkbox
-                  v-for="(section, index) in getItemSections(material)"
-                  :key="index"
-                  :model-value="isMaterialSectionSelected(material.id, index)"
-                  @update:model-value="toggleMaterialSection(material.id, index, !!$event)"
-                  :label="section.title || `Секція ${index + 1}`"
-                  hide-details
-                  density="compact"
-                  class="mb-1"
-                />
-              </div>
-              <div v-else class="text-caption text-grey pl-4">
-                У цього матеріалу немає секцій
-              </div>
-            </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
         <div v-else class="text-caption text-grey">
@@ -181,7 +145,7 @@
       </v-col>
       
       <v-col cols="12">
-        <div class="mb-2 font-weight-medium">Технології та їх класифікації:</div>
+        <div class="mb-2 font-weight-medium">Технології:</div>
         <v-expansion-panels v-if="technologies.length > 0">
           <v-expansion-panel
             v-for="tech in technologies"
@@ -197,24 +161,6 @@
                 density="compact"
               />
             </v-expansion-panel-title>
-            <v-expansion-panel-text>
-              <div v-if="getItemSections(tech).length > 0" class="pl-4">
-                <div class="text-caption mb-2">Оберіть конкретні секції (необов'язково):</div>
-                <v-checkbox
-                  v-for="(section, index) in getItemSections(tech)"
-                  :key="index"
-                  :model-value="isSectionSelected(tech.id, index)"
-                  @update:model-value="toggleSection(tech.id, index, !!$event)"
-                  :label="section.title || `Секція ${index + 1}`"
-                  hide-details
-                  density="compact"
-                  class="mb-1"
-                />
-              </div>
-              <div v-else class="text-caption text-grey pl-4">
-                У цієї технології немає секцій
-              </div>
-            </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
         <div v-else class="text-caption text-grey">
@@ -283,11 +229,9 @@ const itemData = reactive({
   isUnique: false,
 });
 
-// Нова структура для зберігання технологій з секціями
-const selectedTechnologies = ref<Map<string, number[]>>(new Map());
-const selectedCategories = ref<Map<string, number[]>>(new Map());
-const selectedMaterials = ref<Map<string, number[]>>(new Map());
-// Map: technologyId -> array of section indices (empty array = всі секції)
+const selectedTechnologies = ref<Set<string>>(new Set());
+const selectedCategories = ref<Set<string>>(new Set());
+const selectedMaterials = ref<Set<string>>(new Set());
 
 const newFiles = ref<File[]>([]);
 const imagePreviews = ref<string[]>([]);
@@ -351,35 +295,21 @@ async function fetchItemData() {
     selectedCategories.value.clear();
     if (item.categories && item.categories.length > 0) {
       item.categories.forEach(category => {
-        if (category.selectedSections && Array.isArray(category.selectedSections)) {
-          selectedCategories.value.set(category.id, category.selectedSections);
-        } else {
-          selectedCategories.value.set(category.id, []);
-        }
+        selectedCategories.value.add(category.id);
       });
     }
 
     selectedMaterials.value.clear();
     if (item.materials && item.materials.length > 0) {
       item.materials.forEach(material => {
-        if (material.selectedSections && Array.isArray(material.selectedSections)) {
-          selectedMaterials.value.set(material.id, material.selectedSections);
-        } else {
-          selectedMaterials.value.set(material.id, []);
-        }
+        selectedMaterials.value.add(material.id);
       });
     }
 
-    // Завантажуємо дані про технології з секціями
+    selectedTechnologies.value.clear();
     if (item.technologies && item.technologies.length > 0) {
       item.technologies.forEach(tech => {
-        // Перевіряємо чи є в технології інформація про обрані секції
-        if (tech.selectedSections && Array.isArray(tech.selectedSections)) {
-          selectedTechnologies.value.set(tech.id, tech.selectedSections);
-        } else {
-          // Якщо немає інформації про секції, вибираємо всі
-          selectedTechnologies.value.set(tech.id, []);
-        }
+        selectedTechnologies.value.add(tech.id);
       });
     }
 
@@ -430,63 +360,15 @@ function selectImage(index: number) {
   selectedPreviewIndex.value = (selectedPreviewIndex.value === index) ? null : index;
 }
 
-// Функції для роботи з технологіями та секціями
-function getItemSections(item: any): Array<{ title: string; content: string }> {
-  if (!item.description) return [];
-  try {
-    const parsed = JSON.parse(item.description);
-    // Новий формат {general, sections}
-    if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
-      return parsed.sections;
-    }
-    // Старий формат - просто масив секцій
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-  } catch {
-    return [];
-  }
-  return [];
-}
-
 function isTechnologySelected(techId: string): boolean {
   return selectedTechnologies.value.has(techId);
 }
 
-function isSectionSelected(techId: string, sectionIndex: number): boolean {
-  const sections = selectedTechnologies.value.get(techId);
-  return sections ? sections.includes(sectionIndex) : false;
-}
-
 function toggleTechnology(techId: string, selected: boolean) {
   if (selected) {
-    // Додаємо технологію з порожнім масивом секцій (всі секції)
-    selectedTechnologies.value.set(techId, []);
+    selectedTechnologies.value.add(techId);
   } else {
-    // Видаляємо технологію
     selectedTechnologies.value.delete(techId);
-  }
-}
-
-function toggleSection(techId: string, sectionIndex: number, selected: boolean) {
-  if (!selectedTechnologies.value.has(techId)) {
-    // Якщо технологія не вибрана, спочатку вибираємо її
-    selectedTechnologies.value.set(techId, []);
-  }
-  
-  const sections = selectedTechnologies.value.get(techId)!;
-  
-  if (selected) {
-    // Додаємо секцію, якщо її ще немає
-    if (!sections.includes(sectionIndex)) {
-      sections.push(sectionIndex);
-    }
-  } else {
-    // Видаляємо секцію
-    const index = sections.indexOf(sectionIndex);
-    if (index > -1) {
-      sections.splice(index, 1);
-    }
   }
 }
 
@@ -494,35 +376,11 @@ function isCategorySelected(categoryId: string): boolean {
   return selectedCategories.value.has(categoryId);
 }
 
-function isCategorySectionSelected(categoryId: string, sectionIndex: number): boolean {
-  const sections = selectedCategories.value.get(categoryId);
-  return sections ? sections.includes(sectionIndex) : false;
-}
-
 function toggleCategory(categoryId: string, selected: boolean) {
   if (selected) {
-    selectedCategories.value.set(categoryId, []);
+    selectedCategories.value.add(categoryId);
   } else {
     selectedCategories.value.delete(categoryId);
-  }
-}
-
-function toggleCategorySection(categoryId: string, sectionIndex: number, selected: boolean) {
-  if (!selectedCategories.value.has(categoryId)) {
-    selectedCategories.value.set(categoryId, []);
-  }
-
-  const sections = selectedCategories.value.get(categoryId)!;
-
-  if (selected) {
-    if (!sections.includes(sectionIndex)) {
-      sections.push(sectionIndex);
-    }
-  } else {
-    const index = sections.indexOf(sectionIndex);
-    if (index > -1) {
-      sections.splice(index, 1);
-    }
   }
 }
 
@@ -530,35 +388,11 @@ function isMaterialSelected(materialId: string): boolean {
   return selectedMaterials.value.has(materialId);
 }
 
-function isMaterialSectionSelected(materialId: string, sectionIndex: number): boolean {
-  const sections = selectedMaterials.value.get(materialId);
-  return sections ? sections.includes(sectionIndex) : false;
-}
-
 function toggleMaterial(materialId: string, selected: boolean) {
   if (selected) {
-    selectedMaterials.value.set(materialId, []);
+    selectedMaterials.value.add(materialId);
   } else {
     selectedMaterials.value.delete(materialId);
-  }
-}
-
-function toggleMaterialSection(materialId: string, sectionIndex: number, selected: boolean) {
-  if (!selectedMaterials.value.has(materialId)) {
-    selectedMaterials.value.set(materialId, []);
-  }
-
-  const sections = selectedMaterials.value.get(materialId)!;
-
-  if (selected) {
-    if (!sections.includes(sectionIndex)) {
-      sections.push(sectionIndex);
-    }
-  } else {
-    const index = sections.indexOf(sectionIndex);
-    if (index > -1) {
-      sections.splice(index, 1);
-    }
   }
 }
 
@@ -592,30 +426,15 @@ async function handleSubmit() {
   formData.append('description', itemData.description || '');
   if (itemData.price !== null) formData.append('price', String(itemData.price));
   if (itemData.amountAvailable !== null) formData.append('amountAvailable', String(itemData.amountAvailable));
-  const categoryIds = Array.from(selectedCategories.value.keys());
-  const materialIds = Array.from(selectedMaterials.value.keys());
+  const categoryIds = Array.from(selectedCategories.value);
+  const materialIds = Array.from(selectedMaterials.value);
+  const technologyIds = Array.from(selectedTechnologies.value);
   itemData.categoryIds = categoryIds;
   itemData.materialIds = materialIds;
+  itemData.technologyIds = technologyIds;
   formData.append('categoryIds', JSON.stringify(categoryIds));
   formData.append('materialIds', JSON.stringify(materialIds));
-
-  const categoriesData: Record<string, number[]> = {};
-  selectedCategories.value.forEach((sections, id) => {
-    categoriesData[id] = sections;
-  });
-  const materialsData: Record<string, number[]> = {};
-  selectedMaterials.value.forEach((sections, id) => {
-    materialsData[id] = sections;
-  });
-  formData.append('categoriesData', JSON.stringify(categoriesData));
-  formData.append('materialsData', JSON.stringify(materialsData));
-  
-  // Конвертуємо Map в об'єкт для серіалізації
-  const technologiesData: Record<string, number[]> = {};
-  selectedTechnologies.value.forEach((sections, techId) => {
-    technologiesData[techId] = sections;
-  });
-  formData.append('technologiesData', JSON.stringify(technologiesData));
+  formData.append('technologyIds', JSON.stringify(technologyIds));
   
   formData.append('isUnique', String(itemData.isUnique));
 

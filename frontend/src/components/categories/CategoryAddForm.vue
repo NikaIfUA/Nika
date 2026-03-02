@@ -46,56 +46,11 @@
           <v-col cols="12">
             <v-textarea
               v-model="generalDescription"
-              label="Загальний опис"
-              placeholder="Введіть загальний опис категорії..."
+              label="Опис"
+              placeholder="Введіть опис категорії..."
               variant="outlined"
-              rows="3"
+              rows="5"
             />
-          </v-col>
-          <v-col cols="12">
-            <div class="mb-2 font-weight-bold">Деталі категорії (Секції):</div>
-            <v-expansion-panels>
-              <v-expansion-panel
-                v-for="(section, index) in descriptionSections"
-                :key="index"
-              >
-                <v-expansion-panel-title>
-                  {{ section.title || `Секція ${index + 1}` }}
-                </v-expansion-panel-title>
-                <v-expansion-panel-text>
-                  <v-text-field
-                    v-model="section.title"
-                    label="Назва секції"
-                    variant="outlined"
-                    class="mb-3"
-                  />
-                  <v-textarea
-                    v-model="section.content"
-                    label="Вміст секції"
-                    placeholder="Введіть текст..."
-                    variant="outlined"
-                    rows="4"
-                  />
-                  <v-btn
-                    color="error"
-                    variant="text"
-                    size="small"
-                    @click="deleteSection(index)"
-                    class="mt-2"
-                  >
-                    <v-icon>mdi-delete</v-icon> Видалити секцію
-                  </v-btn>
-                </v-expansion-panel-text>
-              </v-expansion-panel>
-            </v-expansion-panels>
-            <v-btn
-              color="primary"
-              variant="outlined"
-              @click="addSection"
-              class="mt-3"
-            >
-              <v-icon>mdi-plus</v-icon> Додати секцію
-            </v-btn>
           </v-col>
         </v-row>
 
@@ -153,13 +108,11 @@ const categoriesStore = useCategoriesStore();
 
 const categoryName = ref('');
 const generalDescription = ref('');
-const categoryDescription = ref('');
 const categoryImage = ref<string>('');
 const newImageFile = ref<File | null>(null);
 const isSaving = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
-const descriptionSections = ref<Array<{ title: string; content: string }>>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const isEditing = computed(() => !!route.params.id);
@@ -176,33 +129,7 @@ onMounted(async () => {
 function loadEditingCategory(category: ICategory) {
   categoryName.value = category.name;
   newImageFile.value = null;
-  
-  // Парсимо JSON опис
-  if (category.description) {
-    try {
-      const parsed = JSON.parse(category.description);
-      // Новий формат {general, sections}
-      if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
-        generalDescription.value = parsed.general || '';
-        descriptionSections.value = parsed.sections;
-      } else if (Array.isArray(parsed)) {
-        // Старий формат - тільки секції
-        generalDescription.value = '';
-        descriptionSections.value = parsed;
-      } else {
-        // Звичайний текст
-        generalDescription.value = category.description;
-        descriptionSections.value = [];
-      }
-    } catch {
-      // Не JSON - звичайний текст
-      generalDescription.value = category.description;
-      descriptionSections.value = [];
-    }
-  } else {
-    generalDescription.value = '';
-    descriptionSections.value = [];
-  }
+  generalDescription.value = category.description || '';
   if (category.image?.id && category.id) {
     categoryImage.value = mainApi.getCategoryImageUrl(category.id, category.image.id);
   } else {
@@ -234,14 +161,6 @@ function deleteImage() {
   }
 }
 
-function addSection() {
-  descriptionSections.value.push({ title: '', content: '' });
-}
-
-function deleteSection(index: number) {
-  descriptionSections.value.splice(index, 1);
-}
-
 async function saveCategory() {
   if (!categoryName.value.trim()) {
     errorMessage.value = 'Назва категорії не може бути порожньою.';
@@ -257,12 +176,7 @@ async function saveCategory() {
     if (isEditing.value && route.params.id) {
       const formData = new FormData();
       formData.append('name', categoryName.value.trim());
-      // Серіалізуємо загальний опис та секції в JSON
-      const descriptionData = {
-        general: generalDescription.value.trim(),
-        sections: descriptionSections.value
-      };
-      formData.append('description', JSON.stringify(descriptionData));
+      formData.append('description', generalDescription.value.trim());
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }
@@ -276,12 +190,7 @@ async function saveCategory() {
     } else {
       const formData = new FormData();
       formData.append('name', categoryName.value.trim());
-      // Серіалізуємо загальний опис та секції в JSON
-      const descriptionData = {
-        general: generalDescription.value.trim(),
-        sections: descriptionSections.value
-      };
-      formData.append('description', JSON.stringify(descriptionData));
+      formData.append('description', generalDescription.value.trim());
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }

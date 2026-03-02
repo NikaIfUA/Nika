@@ -84,12 +84,12 @@ const mainApi = {
     return instance.get(`/get-materials`);
   },
 
-  saveMaterial: (payload: FormData | { name: string; description?: string }): Promise<AxiosResponse<IMaterial>> => {
+  saveMaterial: (payload: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<IMaterial>> => {
     const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
     return instance.post(`/save-material`, payload, config);
   },
 
-  updateMaterial(id: string, data: FormData | { name: string; description?: string }): Promise<AxiosResponse<IMaterial>> {
+  updateMaterial(id: string, data: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<IMaterial>> {
     const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
     return instance.put(`/materials/${id}`, data, config);
   },
@@ -110,12 +110,12 @@ const mainApi = {
     return instance.get(`/technologies/${slug}`);
   },
 
-  saveTechnology: (payload: FormData | { name: string; description?: string }): Promise<AxiosResponse<ITechnology>> => {
+  saveTechnology: (payload: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<ITechnology>> => {
     const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
     return instance.post(`/save-technology`, payload, config);
   },
 
-  updateTechnology(id: string, data: FormData | { name: string; description?: string }): Promise<AxiosResponse<ITechnology>> {
+  updateTechnology(id: string, data: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<ITechnology>> {
     const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
     return instance.put(`/technologies/${id}`, data, config);
   },

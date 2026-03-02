@@ -1,31 +1,50 @@
 <template>
   <div class="reference-container">
-    <h1>Довідник категорій, матеріалів та технологій</h1>
+    <h1>Довідник матеріалів та технологій</h1>
     
     <div class="search-container">
       <BaseInput 
         v-model="searchQuery" 
-        placeholder="Введіть назву категорії, матеріалу або технології..."
-        @input="handleSearch"
+        placeholder="Введіть назву матеріалу або технології..."
       />
     </div>
 
     <div class="reference-content">
-      <!-- Combined Grid -->
       <div class="reference-section">
-        <h2>Категорії, матеріали та технології</h2>
-        <div v-if="allFilteredItems.length > 0" class="items-grid">
-          <div 
-            v-for="item in allFilteredItems" 
-            :key="item.id"
-            class="grid-item"
-            @click="selectItem(item)"
-          >
-            <span class="item-link">{{ item.name }}</span>
-          </div>
+        <h2>Матеріали</h2>
+        <div v-if="filteredMaterials.length > 0" class="treeview-box">
+          <v-treeview
+            :items="materialsTreeItems"
+            item-title="title"
+            item-value="id"
+            item-children="children"
+            open-all
+            activatable
+            class="info-treeview"
+            @update:activated="onMaterialActivated"
+          />
         </div>
         <div v-else class="empty-state">
-          <p>Категорії, матеріали та технології не знайдені</p>
+          <p>Матеріали не знайдені</p>
+        </div>
+      </div>
+
+      <div class="reference-section">
+        <h2>Технології</h2>
+        <div v-if="filteredTechnologies.length > 0" class="treeview-box">
+          <v-treeview
+            :items="technologiesTreeItems"
+            item-title="title"
+            item-value="id"
+            item-children="children"
+            open-all
+            activatable
+            class="info-treeview"
+            @update:activated="onTechnologyActivated"
+          />
+        </div>
+        <div v-else class="empty-state">
+          <p>Технології не знайдені</p>
         </div>
       </div>
     </div>
@@ -36,24 +55,14 @@
   import { ref, computed, onMounted } from "vue";
   import { useRouter } from "vue-router";
   import mainApi from '@/api/main.api';
-  import type { IMaterial, ITechnology, ICategory } from '@/interfaces';
+  import type { IMaterial, ITechnology } from '@/interfaces';
   import BaseInput from '@/components/base/BaseInput.vue';
 
   const router = useRouter();
   const searchQuery = ref('');
   const materials = ref<IMaterial[]>([]);
   const technologies = ref<ITechnology[]>([]);
-  const categories = ref<ICategory[]>([]);
   const isLoading = ref(false);
-
-  const filteredCategories = computed(() => {
-    if (!searchQuery.value) {
-      return [...categories.value].sort((a, b) => a.name.localeCompare(b.name, 'uk'));
-    }
-    return categories.value
-      .filter(c => c.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
-      .sort((a, b) => a.name.localeCompare(b.name, 'uk'));
-  });
 
   const filteredMaterials = computed(() => {
     if (!searchQuery.value) {
@@ -73,27 +82,97 @@
       .sort((a, b) => a.name.localeCompare(b.name, 'uk'));
   });
 
-  const allFilteredItems = computed(() => {
-    const combined = [
-      ...filteredCategories.value.map(c => ({ ...c, type: 'category' as const })),
-      ...filteredMaterials.value.map(m => ({ ...m, type: 'material' as const })),
-      ...filteredTechnologies.value.map(t => ({ ...t, type: 'technology' as const }))
+  type ITreeNode = {
+    id: string;
+    title: string;
+    children?: ITreeNode[];
+  };
+
+  type IHierarchicalEntity = {
+    id: string;
+    name: string;
+    parentId?: string | null;
+  };
+
+  const buildHierarchicalTreeItems = <T extends IHierarchicalEntity>(
+    entities: T[],
+    prefix: 'material' | 'technology',
+    rootTitle: string,
+  ): ITreeNode[] => {
+    const nodeMap = new Map<string, ITreeNode>();
+    const roots: ITreeNode[] = [];
+
+    entities.forEach((entity) => {
+      nodeMap.set(String(entity.id), {
+        id: `${prefix}-${String(entity.id)}`,
+        title: entity.name,
+        children: [],
+      });
+    });
+
+    entities.forEach((entity) => {
+      const currentNode = nodeMap.get(String(entity.id));
+      if (!currentNode) {
+        return;
+      }
+
+      const parentId = entity.parentId ? String(entity.parentId) : null;
+      if (!parentId) {
+        roots.push(currentNode);
+        return;
+      }
+
+      const parentNode = nodeMap.get(parentId);
+      if (!parentNode) {
+        roots.push(currentNode);
+        return;
+      }
+
+      parentNode.children = [...(parentNode.children ?? []), currentNode];
+    });
+
+    const sortNodes = (nodes: ITreeNode[]): ITreeNode[] => {
+      return nodes
+        .map((node) => ({
+          ...node,
+          children: node.children ? sortNodes(node.children) : [],
+        }))
+        .sort((a, b) => a.title.localeCompare(b.title, 'uk'));
+    };
+
+    return [
+      {
+        id: `${prefix}-root`,
+        title: rootTitle,
+        children: sortNodes(roots),
+      },
     ];
-    return combined.sort((a, b) => a.name.localeCompare(b.name, 'uk'));
-  });
+  };
+
+  const materialsTreeItems = computed<ITreeNode[]>(() =>
+    buildHierarchicalTreeItems(
+      filteredMaterials.value,
+      'material',
+      `Список матеріалів (${filteredMaterials.value.length})`,
+    )
+  );
+
+  const technologiesTreeItems = computed<ITreeNode[]>(() =>
+    buildHierarchicalTreeItems(
+      filteredTechnologies.value,
+      'technology',
+      `Список технологій (${filteredTechnologies.value.length})`,
+    )
+  );
 
   const loadData = async () => {
     isLoading.value = true;
     try {
-      const [categoriesRes, materialsRes, technologiesRes] = await Promise.all([
-        mainApi.getAllCategories(),
+      const [materialsRes, technologiesRes] = await Promise.all([
         mainApi.getAllMaterials(),
         mainApi.getAllTechnologies(),
       ]);
 
-      if (categoriesRes.status === 200) {
-        categories.value = categoriesRes.data || [];
-      }
       if (materialsRes.status === 200) {
         materials.value = materialsRes.data || [];
       }
@@ -107,22 +186,49 @@
     }
   };
 
-  const handleSearch = () => {
-    // Search is handled by computed properties
-  };
-
-  const truncateText = (text: string, length: number): string => {
-    return text.length > length ? text.substring(0, length) + '...' : text;
-  };
-
-  const selectItem = (item: any) => {
+  const selectItem = (item: IMaterial | ITechnology, type: 'material' | 'technology') => {
     router.push({
       name: 'infoDetails',
       params: {
-        type: item.type,
+        type,
         slug: item.slug
       }
     });
+  };
+
+  const extractActivatedId = (value: unknown, prefix: string): string | null => {
+    if (!Array.isArray(value)) {
+      return null;
+    }
+
+    const selectedId = value.find((id) => typeof id === 'string' && id.startsWith(prefix));
+    return typeof selectedId === 'string' ? selectedId : null;
+  };
+
+  const onMaterialActivated = (value: unknown) => {
+    const selectedId = extractActivatedId(value, 'material-');
+    if (typeof selectedId !== 'string') {
+      return;
+    }
+
+    const materialId = selectedId.replace('material-', '');
+    const material = filteredMaterials.value.find((item) => String(item.id) === materialId);
+    if (material) {
+      selectItem(material, 'material');
+    }
+  };
+
+  const onTechnologyActivated = (value: unknown) => {
+    const selectedId = extractActivatedId(value, 'technology-');
+    if (typeof selectedId !== 'string') {
+      return;
+    }
+
+    const technologyId = selectedId.replace('technology-', '');
+    const technology = filteredTechnologies.value.find((item) => String(item.id) === technologyId);
+    if (technology) {
+      selectItem(technology, 'technology');
+    }
   };
 
   onMounted(() => {
@@ -181,9 +287,9 @@ h1 {
 }
 
 .reference-content {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
   margin: 0 1.5rem 2rem 1.5rem;
 }
 
@@ -204,44 +310,15 @@ h1 {
   padding-bottom: 0.5rem;
 }
 
-.items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-  padding: 0;
-}
-
-.grid-item {
-  padding: 0.75rem;
-  cursor: pointer;
+.treeview-box {
+  background-color: #f8f9fa;
   border: 1px solid #eaecf0;
   border-radius: 2px;
-  background-color: #f8f9fa;
-  transition: all 0.15s ease;
+  padding: 0.75rem;
 }
 
-.grid-item:hover {
-  background-color: #ede7ff;
-  border-color: #0645ad;
-}
-
-.item-link {
-  font-weight: 600;
-  color: #0645ad;
+.info-treeview :deep(.v-list-item-title) {
   font-size: 0.95rem;
-  display: block;
-  margin-bottom: 0.3rem;
-}
-
-.item-link:hover {
-  text-decoration: underline;
-  color: #3366cc;
-}
-
-.item-hint {
-  color: #72777d;
-  font-size: 0.8rem;
-  line-height: 1.4;
 }
 
 .empty-state {
@@ -254,23 +331,9 @@ h1 {
   border-radius: 2px;
 }
 
-.item-preview {
-  color: #54595d;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  margin-top: 0.25rem;
-}
-
-.empty-message {
-  text-align: center;
-  color: #72777d;
-  padding: 2rem 1.2rem;
-  font-style: italic;
-  border-bottom: 1px solid #eaecf0;
-}
-
 @media (max-width: 768px) {
   .reference-content {
+    grid-template-columns: 1fr;
     margin: 0 1rem 2rem 1rem;
     gap: 1.5rem;
   }
@@ -292,24 +355,6 @@ h1 {
   .search-container :deep(input) {
     max-width: 100%;
   }
-
-  .items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .modal-content {
-    max-width: calc(100% - 2rem);
-    padding: 1.5rem;
-  }
-
-  .modal-content h2 {
-    font-size: 1.3rem;
-  }
-
-  .detail-description {
-    font-size: 0.9rem;
-  }
 }
 
 @media (max-width: 480px) {
@@ -325,27 +370,6 @@ h1 {
 
   .search-container {
     margin: 0 0.75rem 1.5rem 0.75rem;
-  }
-
-  .items-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 0.5rem;
-  }
-
-  .grid-item {
-    padding: 0.5rem;
-  }
-
-  .item-link {
-    font-size: 0.9rem;
-  }
-
-  .item-hint {
-    font-size: 0.75rem;
-  }
-
-  .modal-content {
-    padding: 1.25rem;
   }
 }
 </style>

@@ -65,6 +65,17 @@
           />
         </v-col>
         <v-col cols="12">
+          <v-select
+            v-model="parentId"
+            :items="parentTechnologyOptions"
+            item-title="title"
+            item-value="value"
+            label="Батьківська технологія"
+            variant="outlined"
+            clearable
+          />
+        </v-col>
+        <v-col cols="12">
           <v-textarea
             v-model="generalDescription"
             label="Загальний опис"
@@ -72,51 +83,6 @@
             variant="outlined"
             rows="3"
           />
-        </v-col>
-        <v-col cols="12">
-          <div class="mb-2 font-weight-bold">Деталі технології (Секції):</div>
-          <v-expansion-panels>
-            <v-expansion-panel
-              v-for="(section, index) in descriptionSections"
-              :key="index"
-            >
-              <v-expansion-panel-title>
-                {{ section.title || `Секція ${index + 1}` }}
-              </v-expansion-panel-title>
-              <v-expansion-panel-text>
-                <v-text-field
-                  v-model="section.title"
-                  label="Назва секції"
-                  variant="outlined"
-                  class="mb-3"
-                />
-                <v-textarea
-                  v-model="section.content"
-                  label="Вміст секції"
-                  placeholder="Введіть текст..."
-                  variant="outlined"
-                  rows="4"
-                />
-                <v-btn
-                  color="error"
-                  variant="text"
-                  size="small"
-                  @click="deleteSection(index)"
-                  class="mt-2"
-                >
-                  <v-icon>mdi-delete</v-icon> Видалити секцію
-                </v-btn>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-          </v-expansion-panels>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            @click="addSection"
-            class="mt-3"
-          >
-            <v-icon>mdi-plus</v-icon> Додати секцію
-          </v-btn>
         </v-col>
       </v-row>
 
@@ -184,19 +150,32 @@ const technologiesStore = useTechnologiesStore();
 
 const technologyName = ref('');
 const generalDescription = ref('');
-const technologyDescription = ref('');
+const parentId = ref<string | null>(null);
 const technologyImage = ref<string>('');
 const newImageFile = ref<File | null>(null);
 const isSaving = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
-const descriptionSections = ref<Array<{ title: string; content: string }>>([]);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const isEditing = computed(() => !!route.params.id);
+const parentTechnologyOptions = computed(() => {
+  const currentId = route.params.id ? String(route.params.id) : null;
+  return technologiesStore.technologies
+    .filter((technology) => technology.id !== currentId)
+    .sort((a, b) => a.name.localeCompare(b.name, 'uk'))
+    .map((technology) => ({
+      title: technology.name,
+      value: technology.id,
+    }));
+});
 
 onMounted(async () => {
+  if (!technologiesStore.technologies.length) {
+    await technologiesStore.fetchTechnologies();
+  }
+
   if (route.params.id) {
     const technology = technologiesStore.technologies.find(t => t.id === route.params.id);
     if (technology) {
@@ -207,34 +186,9 @@ onMounted(async () => {
 
 function loadEditingTechnology(technology: ITechnology) {
   technologyName.value = technology.name;
+  generalDescription.value = technology.description || '';
+  parentId.value = technology.parentId ?? null;
   newImageFile.value = null;
-  
-  // Парсимо JSON опис
-  if (technology.description) {
-    try {
-      const parsed = JSON.parse(technology.description);
-      // Новий формат {general, sections}
-      if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
-        generalDescription.value = parsed.general || '';
-        descriptionSections.value = parsed.sections;
-      } else if (Array.isArray(parsed)) {
-        // Старий формат - тільки секції
-        generalDescription.value = '';
-        descriptionSections.value = parsed;
-      } else {
-        // Звичайний текст
-        generalDescription.value = technology.description;
-        descriptionSections.value = [];
-      }
-    } catch {
-      // Не JSON - звичайний текст
-      generalDescription.value = technology.description;
-      descriptionSections.value = [];
-    }
-  } else {
-    generalDescription.value = '';
-    descriptionSections.value = [];
-  }
   
   if (technology.image?.id && technology.id) {
     technologyImage.value = mainApi.getTechnologyImageUrl(technology.id, technology.image.id);
@@ -268,14 +222,6 @@ function deleteImage() {
   }
 }
 
-function addSection() {
-  descriptionSections.value.push({ title: '', content: '' });
-}
-
-function deleteSection(index: number) {
-  descriptionSections.value.splice(index, 1);
-}
-
 async function saveTechnology() {
   if (!technologyName.value.trim()) {
     errorMessage.value = 'Назва технології не може бути порожньою.';
@@ -291,12 +237,8 @@ async function saveTechnology() {
     if (isEditing.value && route.params.id) {
       const formData = new FormData();
       formData.append('name', technologyName.value.trim());
-      // Серіалізуємо загальний опис та секції в JSON
-      const descriptionData = {
-        general: generalDescription.value.trim(),
-        sections: descriptionSections.value
-      };
-      formData.append('description', JSON.stringify(descriptionData));
+      formData.append('description', generalDescription.value.trim());
+      formData.append('parentId', parentId.value ?? '');
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }
@@ -310,12 +252,9 @@ async function saveTechnology() {
     } else {
       const formData = new FormData();
       formData.append('name', technologyName.value.trim());
-      // Серіалізуємо загальний опис та секції в JSON
-      const descriptionData = {
-        general: generalDescription.value.trim(),
-        sections: descriptionSections.value
-      };
-      formData.append('description', JSON.stringify(descriptionData));
+      // Відправляємо опис як звичайний рядок
+      formData.append('description', generalDescription.value.trim());
+      formData.append('parentId', parentId.value ?? '');
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }

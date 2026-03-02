@@ -2,11 +2,13 @@ import { getDbInstance } from '../connection.ts';
 import { materials, images } from '../schema.ts';
 import { eq } from 'npm:drizzle-orm';
 
-export async function createMaterial(data: { id: string; name: string; slug: string; description?: string; imageId?: string }) {
+export async function createMaterial(data: { id: string; name: string; slug: string; description?: string; imageId?: string; parentId?: string | null }) {
   const db = getDbInstance();
   const materialData = {
     ...data,
     image_id: data.imageId,
+    parent_id: data.parentId,
+    parentId: undefined,
     imageId: undefined
   };
   const result = await db.insert(materials).values(materialData).returning().then((res) => res[0]);
@@ -49,15 +51,18 @@ async function fetchMaterialWithImage(materialId: string) {
   
   return {
     ...material,
+    parentId: material.parent_id ?? null,
     image: image
   };
 }
 
-export async function updateMaterial(id: string, data: { name?: string; description?: string; imageId?: string }) {
+export async function updateMaterial(id: string, data: { name?: string; description?: string; imageId?: string; parentId?: string | null }) {
   const db = getDbInstance();
   const updateData = {
     ...data,
     image_id: data.imageId,
+    parent_id: data.parentId,
+    parentId: undefined,
     imageId: undefined
   };
   await db.update(materials).set(updateData).where(eq(materials.id, id));

@@ -48,7 +48,6 @@ export default class Database {
           id: globalThis.crypto.randomUUID(),
           item_id: newItemId,
           category_id: cat.id,
-          selected_sections: cat.selectedSections || null,
         }));
         await tx.insert(categoryItems).values(categoryLinks);
       }
@@ -59,7 +58,6 @@ export default class Database {
           id: globalThis.crypto.randomUUID(),
           item_id: newItemId,
           technology_id: tech.id,
-          selected_sections: tech.selectedSections || null,
         }));
         await tx.insert(itemTechnologies).values(technologyLinks);
       }
@@ -85,15 +83,13 @@ export default class Database {
 
         const materialIds = itemData.materials?.map(mat => mat.id) ?? [];
         if (materialIds.length > 0) {
-          const materialSectionsById = new Map(itemData.materials?.map(mat => [mat.id, mat.selectedSections]) ?? []);
-          const imageMaterialValues: { id: string; image_id: string; material_id: string; selected_sections?: number[] | null }[] = [];
+          const imageMaterialValues: { id: string; image_id: string; material_id: string }[] = [];
           for (const image of newImages) {
             for (const materialId of materialIds) {
               imageMaterialValues.push({
                 id: globalThis.crypto.randomUUID(),
                 image_id: image.id,
                 material_id: materialId,
-                selected_sections: materialSectionsById.get(materialId) || null,
               });
             }
           }
@@ -139,7 +135,6 @@ export default class Database {
           name: categoryData.name,
           slug: categoryData.slug,
           description: categoryData.description ?? undefined,
-          selectedSections: relation.selected_sections as number[] | undefined,
         });
         categoriesByItemId.set(relation.item_id, existing);
       }
@@ -164,14 +159,12 @@ export default class Database {
           name: technologyData.name, 
           slug: technologyData.slug,
           description: technologyData.description ?? undefined,
-          selectedSections: relation.selected_sections as number[] | undefined
         });
         technologiesByItemId.set(relation.item_id, existing);
       }
     }
 
     const allImageIds = allImagesForItems.map(img => img.id);
-    const imageIdToItemId = new Map(allImagesForItems.map(img => [img.id, img.item_id ?? '']));
     const imageMaterialRelations = allImageIds.length > 0
       ? await this.db.select().from(imageMaterials).where(inArray(imageMaterials.image_id, allImageIds))
       : [];
@@ -180,19 +173,6 @@ export default class Database {
       ? await this.db.select().from(materials).where(inArray(materials.id, materialIds))
       : [];
     const materialsMap = new Map(allMaterials.map(mat => [mat.id, mat]));
-
-    const materialSectionsByItemId = new Map<string, Map<string, number[]>>();
-    for (const relation of imageMaterialRelations) {
-      const itemId = imageIdToItemId.get(relation.image_id);
-      if (!itemId) continue;
-      const selected = relation.selected_sections as number[] | undefined;
-      if (!selected || selected.length === 0) continue;
-      const itemMap = materialSectionsByItemId.get(itemId) ?? new Map<string, number[]>();
-      if (!itemMap.has(relation.material_id)) {
-        itemMap.set(relation.material_id, selected);
-        materialSectionsByItemId.set(itemId, itemMap);
-      }
-    }
 
     const materialsByImageId = new Map<string, (typeof materials.$inferSelect)[]>();
     for (const relation of imageMaterialRelations) {
@@ -210,13 +190,11 @@ export default class Database {
 
       const itemImages: IImage[] = itemImageRecords.map(imgRecord => {
         (materialsByImageId.get(imgRecord.id) || []).forEach(mat => {
-          const selections = materialSectionsByItemId.get(row.id)?.get(mat.id);
           allMaterialsForItem.set(mat.id, {
             id: mat.id,
             name: mat.name,
             slug: mat.slug,
             description: mat.description ?? undefined,
-            selectedSections: selections,
           });
         });
 
@@ -270,7 +248,6 @@ export default class Database {
           id: globalThis.crypto.randomUUID(),
           item_id: id,
           category_id: cat.id,
-          selected_sections: cat.selectedSections || null,
         }));
         await tx.insert(categoryItems).values(categoryLinks);
       }
@@ -283,7 +260,6 @@ export default class Database {
           id: globalThis.crypto.randomUUID(),
           item_id: id,
           technology_id: tech.id,
-          selected_sections: tech.selectedSections || null,
         }));
         await tx.insert(itemTechnologies).values(technologyLinks);
       }
@@ -319,15 +295,13 @@ export default class Database {
 
         const materialIds = itemData.materials?.map(mat => mat.id) ?? [];
         if (materialIds.length > 0) {
-          const materialSectionsById = new Map(itemData.materials?.map(mat => [mat.id, mat.selectedSections]) ?? []);
-          const imageMaterialValues: { id: string; image_id: string; material_id: string; selected_sections?: number[] | null }[] = [];
+          const imageMaterialValues: { id: string; image_id: string; material_id: string }[] = [];
           for (const imageId of allCurrentImageIds) {
             for (const materialId of materialIds) {
               imageMaterialValues.push({
                 id: globalThis.crypto.randomUUID(),
                 image_id: imageId,
                 material_id: materialId,
-                selected_sections: materialSectionsById.get(materialId) || null,
               });
             }
           }

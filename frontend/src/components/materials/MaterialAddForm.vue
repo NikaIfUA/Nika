@@ -44,6 +44,17 @@
             <v-text-field v-model="materialName" label="Назва матеріалу" variant="outlined" />
           </v-col>
           <v-col cols="12">
+            <v-select
+              v-model="parentId"
+              :items="parentMaterialOptions"
+              item-title="title"
+              item-value="value"
+              label="Батьківський матеріал"
+              variant="outlined"
+              clearable
+            />
+          </v-col>
+          <v-col cols="12">
             <v-textarea
               v-model="generalDescription"
               label="Загальний опис"
@@ -51,51 +62,6 @@
               variant="outlined"
               rows="3"
             />
-          </v-col>
-          <v-col cols="12">
-            <div class="mb-2 font-weight-bold">Деталі матеріалу (Секції):</div>
-            <v-expansion-panels>
-              <v-expansion-panel
-                v-for="(section, index) in descriptionSections"
-                :key="index"
-              >
-                <v-expansion-panel-title>
-                  {{ section.title || `Секція ${index + 1}` }}
-                </v-expansion-panel-title>
-                <v-expansion-panel-text>
-                  <v-text-field
-                    v-model="section.title"
-                    label="Назва секції"
-                    variant="outlined"
-                    class="mb-3"
-                  />
-                  <v-textarea
-                    v-model="section.content"
-                    label="Вміст секції"
-                    placeholder="Введіть текст..."
-                    variant="outlined"
-                    rows="4"
-                  />
-                  <v-btn
-                    color="error"
-                    variant="text"
-                    size="small"
-                    @click="deleteSection(index)"
-                    class="mt-2"
-                  >
-                    <v-icon>mdi-delete</v-icon> Видалити секцію
-                  </v-btn>
-                </v-expansion-panel-text>
-              </v-expansion-panel>
-            </v-expansion-panels>
-            <v-btn
-              color="primary"
-              variant="outlined"
-              @click="addSection"
-              class="mt-3"
-            >
-              <v-icon>mdi-plus</v-icon> Додати секцію
-            </v-btn>
           </v-col>
         </v-row>
 
@@ -153,18 +119,31 @@ const materialsStore = useMaterialsStore();
 
 const materialName = ref('');
 const generalDescription = ref('');
-const materialDescription = ref('');
+const parentId = ref<string | null>(null);
 const materialImage = ref<string>('');
 const newImageFile = ref<File | null>(null);
 const isSaving = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
-const descriptionSections = ref<Array<{ title: string; content: string }>>([]);
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const isEditing = computed(() => !!route.params.id);
+const parentMaterialOptions = computed(() => {
+  const currentId = route.params.id ? String(route.params.id) : null;
+  return materialsStore.materials
+    .filter((material) => material.id !== currentId)
+    .sort((a, b) => a.name.localeCompare(b.name, 'uk'))
+    .map((material) => ({
+      title: material.name,
+      value: material.id,
+    }));
+});
 
 onMounted(async () => {
+  if (!materialsStore.materials.length) {
+    await materialsStore.fetchMaterials();
+  }
+
   if (route.params.id) {
     const material = materialsStore.materials.find(m => m.id === route.params.id);
     if (material) {
@@ -175,34 +154,10 @@ onMounted(async () => {
 
 function loadEditingMaterial(material: IMaterial) {
   materialName.value = material.name;
+  generalDescription.value = material.description || '';
+  parentId.value = material.parentId ?? null;
   newImageFile.value = null;
   
-  // Парсимо JSON опис
-  if (material.description) {
-    try {
-      const parsed = JSON.parse(material.description);
-      // Новий формат {general, sections}
-      if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
-        generalDescription.value = parsed.general || '';
-        descriptionSections.value = parsed.sections;
-      } else if (Array.isArray(parsed)) {
-        // Старий формат - тільки секції
-        generalDescription.value = '';
-        descriptionSections.value = parsed;
-      } else {
-        // Звичайний текст
-        generalDescription.value = material.description;
-        descriptionSections.value = [];
-      }
-    } catch {
-      // Не JSON - звичайний текст
-      generalDescription.value = material.description;
-      descriptionSections.value = [];
-    }
-  } else {
-    generalDescription.value = '';
-    descriptionSections.value = [];
-  }
   if (material.image?.id && material.id) {
     materialImage.value = mainApi.getMaterialImageUrl(material.id, material.image.id);
   } else {
@@ -234,14 +189,6 @@ function deleteImage() {
   }
 }
 
-function addSection() {
-  descriptionSections.value.push({ title: '', content: '' });
-}
-
-function deleteSection(index: number) {
-  descriptionSections.value.splice(index, 1);
-}
-
 async function saveMaterial() {
   if (!materialName.value.trim()) {
     errorMessage.value = 'Назва матеріалу не може бути порожньою.';
@@ -257,12 +204,8 @@ async function saveMaterial() {
     if (isEditing.value && route.params.id) {
       const formData = new FormData();
       formData.append('name', materialName.value.trim());
-      // Серіалізуємо загальний опис та секції в JSON
-      const descriptionData = {
-        general: generalDescription.value.trim(),
-        sections: descriptionSections.value
-      };
-      formData.append('description', JSON.stringify(descriptionData));
+      formData.append('description', generalDescription.value.trim());
+      formData.append('parentId', parentId.value ?? '');
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }
@@ -276,12 +219,8 @@ async function saveMaterial() {
     } else {
       const formData = new FormData();
       formData.append('name', materialName.value.trim());
-      // Серіалізуємо загальний опис та секції в JSON
-      const descriptionData = {
-        general: generalDescription.value.trim(),
-        sections: descriptionSections.value
-      };
-      formData.append('description', JSON.stringify(descriptionData));
+      formData.append('description', generalDescription.value.trim());
+      formData.append('parentId', parentId.value ?? '');
       if (newImageFile.value) {
         formData.append('image', newImageFile.value);
       }

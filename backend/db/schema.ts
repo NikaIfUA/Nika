@@ -43,7 +43,6 @@ export const categoryItems = table('category_items', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   category_id: t.varchar('category_id', { length: 50 }).notNull().references(() => categories.id, { onDelete: 'cascade' }),
   item_id: t.varchar('item_id', { length: 50 }).notNull().references(() => items.id, { onDelete: 'cascade' }),
-  selected_sections: t.json('selected_sections').$type<number[]>(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -54,6 +53,7 @@ export const materials = table('materials', {
   slug: t.varchar('slug', { length: 255 }).notNull().unique(),
   description: t.text('description'),
   image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
+  parent_id: t.varchar('parent_id', { length: 50 }).references(() => materials.id, { onDelete: 'set null' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -62,7 +62,6 @@ export const imageMaterials = table('image_materials', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   image_id: t.varchar('image_id', { length: 50 }).notNull().references(() => images.id, { onDelete: 'cascade' }),
   material_id: t.varchar('material_id', { length: 50 }).notNull().references(() => materials.id, { onDelete: 'cascade' }),
-  selected_sections: t.json('selected_sections').$type<number[]>(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -73,6 +72,7 @@ export const technologies = table('technologies', {
   slug: t.varchar('slug', { length: 255 }).notNull().unique(),
   description: t.text('description'),
   image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
+  parent_id: t.varchar('parent_id', { length: 50 }).references(() => technologies.id, { onDelete: 'set null' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -81,7 +81,6 @@ export const itemTechnologies = table('item_technologies', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   item_id: t.varchar('item_id', { length: 50 }).notNull().references(() => items.id, { onDelete: 'cascade' }),
   technology_id: t.varchar('technology_id', { length: 50 }).notNull().references(() => technologies.id, { onDelete: 'cascade' }),
-  selected_sections: t.json('selected_sections').$type<number[]>(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

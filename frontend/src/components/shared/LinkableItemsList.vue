@@ -13,24 +13,7 @@
           <span v-else class="item-link item-no-link">
             <span class="item-name">{{ item.name }}</span>
           </span>
-          
-          <!-- Секції -->
-          <span v-if="hasSections(item)" class="sections-list">
-            (<template v-for="(sectionIndex, i) in getSelectedSections(item)" :key="sectionIndex">
-              <router-link
-                :to="{
-                  name: 'infoDetails',
-                  params: { type: itemType, slug: item.slug },
-                  hash: `#section-${getSectionId(item, sectionIndex)}`
-                }"
-                class="section-link"
-              >
-                {{ getSectionTitle(item, sectionIndex) }}
-              </router-link>
-              <span v-if="i < getSelectedSections(item).length - 1">, </span>
-            </template>)
-          </span>
-          
+
           <span v-if="index < items.length - 1" class="separator">, </span>
         </div>
       </template>
@@ -52,49 +35,6 @@ const props = withDefaults(defineProps<Props>(), {});
 const itemsWithoutSlug = computed(() => {
   return props.items?.filter(item => !item.slug || item.slug === '-' || item.slug.trim() === '') || [];
 });
-
-// Функції для роботи з секціями технологій
-function hasSections(item: any): boolean {
-  return item.selectedSections && item.selectedSections.length > 0;
-}
-
-function getSelectedSections(item: any): number[] {
-  return item.selectedSections || [];
-}
-
-function getSectionTitle(item: any, sectionIndex: number): string {
-  if (!item.description) return `Секція ${sectionIndex + 1}`;
-  try {
-    const parsed = JSON.parse(item.description);
-    // Новий формат {general, sections}
-    if (typeof parsed === 'object' && !Array.isArray(parsed) && Array.isArray(parsed.sections)) {
-      const section = parsed.sections[sectionIndex];
-      return section?.title || `Секція ${sectionIndex + 1}`;
-    }
-    // Старий формат - просто масив секцій
-    if (Array.isArray(parsed)) {
-      const section = parsed[sectionIndex];
-      return section?.title || `Секція ${sectionIndex + 1}`;
-    }
-  } catch {
-    return `Секція ${sectionIndex + 1}`;
-  }
-  return `Секція ${sectionIndex + 1}`;
-}
-
-function getSectionId(item: any, sectionIndex: number): string {
-  const title = getSectionTitle(item, sectionIndex);
-  if (title && !title.startsWith('Секція')) {
-    return title
-      .toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^a-zа-яїієґ0-9\-]+/gi, '')
-      .replace(/\-\-+/g, '-')
-      .replace(/^-+/, '')
-      .replace(/-+$/, '');
-  }
-  return `${sectionIndex}`;
-}
 
 onMounted(() => {
   if (itemsWithoutSlug.value.length > 0) {
@@ -157,24 +97,5 @@ onMounted(() => {
 
 .item-wrapper {
   display: inline;
-}
-
-.sections-list {
-  display: inline;
-  margin-left: 4px;
-  font-size: 0.9em;
-}
-
-.section-link {
-  color: #1976d2;
-  text-decoration: none;
-  transition: color 0.2s ease;
-  opacity: 0.8;
-}
-
-.section-link:hover {
-  color: #1565c0;
-  text-decoration: underline;
-  opacity: 1;
 }
 </style>
