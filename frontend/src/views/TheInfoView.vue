@@ -1,10 +1,10 @@
-<template>
+﻿<template>
   <div class="reference-container">
     <h1>Довідник матеріалів та технологій</h1>
-    
+
     <div class="search-container">
-      <BaseInput 
-        v-model="searchQuery" 
+      <BaseInput
+        v-model="searchQuery"
         placeholder="Введіть назву матеріалу або технології..."
       />
     </div>
@@ -12,227 +12,71 @@
     <div class="reference-content">
       <div class="reference-section">
         <h2>Матеріали</h2>
-        <div v-if="filteredMaterials.length > 0" class="treeview-box">
-          <v-treeview
-            :items="materialsTreeItems"
-            item-title="title"
-            item-value="id"
-            item-children="children"
-            open-all
-            activatable
-            class="info-treeview"
-            @update:activated="onMaterialActivated"
-          />
-        </div>
-        <div v-else class="empty-state">
-          <p>Матеріали не знайдені</p>
-        </div>
+        <InfoTreeview
+          type="material"
+          :search-nodes="searchQuery ? searchResults.materials : null"
+        />
       </div>
 
       <div class="reference-section">
         <h2>Технології</h2>
-        <div v-if="filteredTechnologies.length > 0" class="treeview-box">
-          <v-treeview
-            :items="technologiesTreeItems"
-            item-title="title"
-            item-value="id"
-            item-children="children"
-            open-all
-            activatable
-            class="info-treeview"
-            @update:activated="onTechnologyActivated"
-          />
-        </div>
-        <div v-else class="empty-state">
-          <p>Технології не знайдені</p>
-        </div>
+        <InfoTreeview
+          type="technology"
+          :search-nodes="searchQuery ? searchResults.technologies : null"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from "vue";
-  import { useRouter } from "vue-router";
+  import { ref, watch } from 'vue';
   import mainApi from '@/api/main.api';
-  import type { IMaterial, ITechnology } from '@/interfaces';
   import BaseInput from '@/components/base/BaseInput.vue';
+  import InfoTreeview, { type IFlatNode } from '@/components/treeviews/InfoTreeview.vue';
 
-  const router = useRouter();
-  const searchQuery = ref('');
-  const materials = ref<IMaterial[]>([]);
-  const technologies = ref<ITechnology[]>([]);
-  const isLoading = ref(false);
-
-  const filteredMaterials = computed(() => {
-    if (!searchQuery.value) {
-      return [...materials.value].sort((a, b) => a.name.localeCompare(b.name, 'uk'));
-    }
-    return materials.value
-      .filter(m => m.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
-      .sort((a, b) => a.name.localeCompare(b.name, 'uk'));
-  });
-
-  const filteredTechnologies = computed(() => {
-    if (!searchQuery.value) {
-      return [...technologies.value].sort((a, b) => a.name.localeCompare(b.name, 'uk'));
-    }
-    return technologies.value
-      .filter(t => t.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
-      .sort((a, b) => a.name.localeCompare(b.name, 'uk'));
-  });
-
-  type ITreeNode = {
-    id: string;
-    title: string;
-    children?: ITreeNode[];
-  };
-
-  type IHierarchicalEntity = {
+  type IChildNode = {
     id: string;
     name: string;
-    parentId?: string | null;
+    slug: string;
+    description: string | null;
+    parentId: string | null;
+    hasChildren: boolean;
   };
 
-  const buildHierarchicalTreeItems = <T extends IHierarchicalEntity>(
-    entities: T[],
-    prefix: 'material' | 'technology',
-    rootTitle: string,
-  ): ITreeNode[] => {
-    const nodeMap = new Map<string, ITreeNode>();
-    const roots: ITreeNode[] = [];
+  const searchQuery = ref('');
+  const searchResults = ref<{ materials: IFlatNode[]; technologies: IFlatNode[] }>({ materials: [], technologies: [] });
+  let searchDebounce: ReturnType<typeof setTimeout> | null = null;
 
-    entities.forEach((entity) => {
-      nodeMap.set(String(entity.id), {
-        id: `${prefix}-${String(entity.id)}`,
-        title: entity.name,
-        children: [],
-      });
-    });
-
-    entities.forEach((entity) => {
-      const currentNode = nodeMap.get(String(entity.id));
-      if (!currentNode) {
-        return;
-      }
-
-      const parentId = entity.parentId ? String(entity.parentId) : null;
-      if (!parentId) {
-        roots.push(currentNode);
-        return;
-      }
-
-      const parentNode = nodeMap.get(parentId);
-      if (!parentNode) {
-        roots.push(currentNode);
-        return;
-      }
-
-      parentNode.children = [...(parentNode.children ?? []), currentNode];
-    });
-
-    const sortNodes = (nodes: ITreeNode[]): ITreeNode[] => {
-      return nodes
-        .map((node) => ({
-          ...node,
-          children: node.children ? sortNodes(node.children) : [],
-        }))
-        .sort((a, b) => a.title.localeCompare(b.title, 'uk'));
-    };
-
-    return [
-      {
-        id: `${prefix}-root`,
-        title: rootTitle,
-        children: sortNodes(roots),
-      },
-    ];
-  };
-
-  const materialsTreeItems = computed<ITreeNode[]>(() =>
-    buildHierarchicalTreeItems(
-      filteredMaterials.value,
-      'material',
-      `Список матеріалів (${filteredMaterials.value.length})`,
-    )
-  );
-
-  const technologiesTreeItems = computed<ITreeNode[]>(() =>
-    buildHierarchicalTreeItems(
-      filteredTechnologies.value,
-      'technology',
-      `Список технологій (${filteredTechnologies.value.length})`,
-    )
-  );
-
-  const loadData = async () => {
-    isLoading.value = true;
+  const performSearch = async (query: string) => {
+    if (!query) {
+      searchResults.value = { materials: [], technologies: [] };
+      return;
+    }
     try {
-      const [materialsRes, technologiesRes] = await Promise.all([
-        mainApi.getAllMaterials(),
-        mainApi.getAllTechnologies(),
-      ]);
-
-      if (materialsRes.status === 200) {
-        materials.value = materialsRes.data || [];
+      const res = await mainApi.getInfoTree();
+      const q = query.toLowerCase();
+      if (res.status === 200) {
+        const all = res.data;
+        searchResults.value = {
+          materials: (all.materials as IChildNode[])
+            .filter((m) => m.name.toLowerCase().includes(q))
+            .sort((a, b) => a.name.localeCompare(b.name, 'uk'))
+            .map((m) => ({ id: m.id, title: m.name, slug: m.slug, depth: 0, hasChildren: false })),
+          technologies: (all.technologies as IChildNode[])
+            .filter((t) => t.name.toLowerCase().includes(q))
+            .sort((a, b) => a.name.localeCompare(b.name, 'uk'))
+            .map((t) => ({ id: t.id, title: t.name, slug: t.slug, depth: 0, hasChildren: false })),
+        };
       }
-      if (technologiesRes.status === 200) {
-        technologies.value = technologiesRes.data || [];
-      }
-    } catch (error) {
-      console.error('Error loading reference data:', error);
-    } finally {
-      isLoading.value = false;
+    } catch (e) {
+      console.error('Search error:', e);
     }
   };
 
-  const selectItem = (item: IMaterial | ITechnology, type: 'material' | 'technology') => {
-    router.push({
-      name: 'infoDetails',
-      params: {
-        type,
-        slug: item.slug
-      }
-    });
-  };
-
-  const extractActivatedId = (value: unknown, prefix: string): string | null => {
-    if (!Array.isArray(value)) {
-      return null;
-    }
-
-    const selectedId = value.find((id) => typeof id === 'string' && id.startsWith(prefix));
-    return typeof selectedId === 'string' ? selectedId : null;
-  };
-
-  const onMaterialActivated = (value: unknown) => {
-    const selectedId = extractActivatedId(value, 'material-');
-    if (typeof selectedId !== 'string') {
-      return;
-    }
-
-    const materialId = selectedId.replace('material-', '');
-    const material = filteredMaterials.value.find((item) => String(item.id) === materialId);
-    if (material) {
-      selectItem(material, 'material');
-    }
-  };
-
-  const onTechnologyActivated = (value: unknown) => {
-    const selectedId = extractActivatedId(value, 'technology-');
-    if (typeof selectedId !== 'string') {
-      return;
-    }
-
-    const technologyId = selectedId.replace('technology-', '');
-    const technology = filteredTechnologies.value.find((item) => String(item.id) === technologyId);
-    if (technology) {
-      selectItem(technology, 'technology');
-    }
-  };
-
-  onMounted(() => {
-    loadData();
+  watch(searchQuery, (val) => {
+    if (searchDebounce) clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => performSearch(val), 250);
   });
 </script>
 
@@ -308,27 +152,6 @@ h1 {
   font-weight: 600;
   letter-spacing: 0.5px;
   padding-bottom: 0.5rem;
-}
-
-.treeview-box {
-  background-color: #f8f9fa;
-  border: 1px solid #eaecf0;
-  border-radius: 2px;
-  padding: 0.75rem;
-}
-
-.info-treeview :deep(.v-list-item-title) {
-  font-size: 0.95rem;
-}
-
-.empty-state {
-  text-align: center;
-  color: #72777d;
-  padding: 2rem;
-  font-style: italic;
-  background-color: #f8f9fa;
-  border: 1px solid #eaecf0;
-  border-radius: 2px;
 }
 
 @media (max-width: 768px) {

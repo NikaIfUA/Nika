@@ -4,6 +4,7 @@ import { generateSlug, createWithUniqueSlug } from '../util/slug.ts';
 import ImageService from './imageService.ts';
 import { IImage } from '../Interfaces.ts';
 import ImageCrud from '../db/crud/imageCrud.ts';
+import InfoTreeService from './infoTreeService.ts';
 
 class MaterialService {
   public static async saveMaterial({ request, response }: RouterContext<string>): Promise<void> {
@@ -55,6 +56,9 @@ class MaterialService {
         })
       );
 
+      await InfoTreeService.invalidateInfoTreeCache().catch((error) => {
+        console.warn('material cache invalidate failed:', error);
+      });
       response.status = 201;
       response.body = newMaterial;
       return;
@@ -131,6 +135,9 @@ class MaterialService {
         return;
       }
 
+      await InfoTreeService.invalidateInfoTreeCache().catch((error) => {
+        console.warn('material cache invalidate failed:', error);
+      });
       response.status = 200;
       response.body = updatedMaterial;
 
@@ -153,6 +160,9 @@ class MaterialService {
         return;
       }
 
+      await InfoTreeService.invalidateInfoTreeCache().catch((error) => {
+        console.warn('material cache invalidate failed:', error);
+      });
       response.status = 200;
       response.body = { message: "Material deleted successfully" };
 

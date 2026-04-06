@@ -1,6 +1,6 @@
 import { getDbInstance } from '../connection.ts';
 import { materials, images } from '../schema.ts';
-import { eq } from 'npm:drizzle-orm';
+import { eq, isNull } from 'npm:drizzle-orm';
 
 export async function createMaterial(data: { id: string; name: string; slug: string; description?: string; imageId?: string; parentId?: string | null }) {
   const db = getDbInstance();
@@ -75,4 +75,25 @@ export async function deleteMaterial(id: string) {
   const db = getDbInstance();
   const deletedItems = await db.delete(materials).where(eq(materials.id, id));
   return deletedItems[0];
+}
+
+export async function getMaterialsByParentId(parentId: string | null): Promise<Array<{ id: string; name: string; slug: string; description: string | null; parentId: string | null; hasChildren: boolean }>> {
+  const db = getDbInstance();
+  const rows = parentId
+    ? await db.select().from(materials).where(eq(materials.parent_id, parentId))
+    : await db.select().from(materials).where(isNull(materials.parent_id));
+
+  return await Promise.all(
+    rows.map(async (m) => {
+      const children = await db.select({ id: materials.id }).from(materials).where(eq(materials.parent_id, m.id));
+      return {
+        id: m.id,
+        name: m.name,
+        slug: m.slug,
+        description: m.description ?? null,
+        parentId: m.parent_id ?? null,
+        hasChildren: children.length > 0,
+      };
+    }),
+  );
 }

@@ -12,8 +12,8 @@
     <div v-else-if="item" class="info-details-content">
       <!-- Image Section -->
       <div v-if="item.image" class="image-section">
-        <img 
-          :src="getImageUrl(item.image)" 
+        <img
+          :src="getImageUrl(item.image)"
           :alt="item.name"
           class="detail-image"
         />
@@ -26,16 +26,23 @@
           {{ item.description || 'Опис недоступний' }}
         </div>
       </div>
+
+      <!-- Treeview Section -->
+      <div v-if="itemType !== 'category'" class="treeview-section">
+        <h2>{{ itemType === 'material' ? 'Матеріали' : 'Технології' }}</h2>
+        <InfoTreeview :key="itemType" :type="itemType" :search-nodes="null" :active-slug="(item as any).slug" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, watch } from 'vue';
   import { useRoute, useRouter } from 'vue-router';
   import mainApi from '@/api/main.api';
   import type { IMaterial, ITechnology } from '@/interfaces';
   import { API_URL } from '@/env';
+  import InfoTreeview from '@/components/treeviews/InfoTreeview.vue';
 
   const route = useRoute();
   const router = useRouter();
@@ -93,6 +100,10 @@
   onMounted(() => {
     loadData();
   });
+
+  watch(() => [route.params.type, route.params.slug], () => {
+    loadData();
+  });
 </script>
 
 <style scoped>
@@ -140,6 +151,19 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+.treeview-section {
+  border-radius: 2px;
+}
+
+.treeview-section h2 {
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #a2a9b1;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #202122;
 }
 
 .detail-section {

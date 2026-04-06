@@ -1,6 +1,6 @@
 import { getDbInstance } from '../connection.ts';
 import { technologies, images } from '../schema.ts';
-import { eq } from 'npm:drizzle-orm';
+import { eq, isNull } from 'npm:drizzle-orm';
 
 export async function createTechnology(data: { id: string; name: string; slug: string; description?: string; imageId?: string; parentId?: string | null }) {
   const db = getDbInstance();
@@ -85,4 +85,25 @@ export async function deleteTechnology(id: string) {
   const db = getDbInstance();
   const deletedItems = await db.delete(technologies).where(eq(technologies.id, id));
   return deletedItems[0];
+}
+
+export async function getTechnologiesByParentId(parentId: string | null): Promise<Array<{ id: string; name: string; slug: string; description: string | null; parentId: string | null; hasChildren: boolean }>> {
+  const db = getDbInstance();
+  const rows = parentId
+    ? await db.select().from(technologies).where(eq(technologies.parent_id, parentId))
+    : await db.select().from(technologies).where(isNull(technologies.parent_id));
+
+  return await Promise.all(
+    rows.map(async (t) => {
+      const children = await db.select({ id: technologies.id }).from(technologies).where(eq(technologies.parent_id, t.id));
+      return {
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        description: t.description ?? null,
+        parentId: t.parent_id ?? null,
+        hasChildren: children.length > 0,
+      };
+    }),
+  );
 }

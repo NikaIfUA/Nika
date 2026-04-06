@@ -106,6 +106,16 @@ const mainApi = {
     return instance.get(`/get-technologies`);
   },
 
+  getInfoTree: (): Promise<AxiosResponse<{ materials: IMaterial[]; technologies: ITechnology[]; cachedAt: string }>> => {
+    return instance.get(`/get-info-tree`);
+  },
+
+  getInfoTreeChildren: (type: 'material' | 'technology', parentId: string | null): Promise<AxiosResponse<{ items: Array<{ id: string; name: string; slug: string; description: string | null; parentId: string | null; hasChildren: boolean }>; cachedAt: string }>> => {
+    const params: Record<string, string> = { type };
+    if (parentId) params.parentId = parentId;
+    return instance.get(`/get-info-tree/children`, { params });
+  },
+
   getTechnologyBySlug: (slug: string): Promise<AxiosResponse<ITechnology>> => {
     return instance.get(`/technologies/${slug}`);
   },

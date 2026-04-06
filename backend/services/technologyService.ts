@@ -4,6 +4,7 @@ import { generateSlug, createWithUniqueSlug } from '../util/slug.ts';
 import ImageService from './imageService.ts';
 import { IImage } from '../Interfaces.ts';
 import ImageCrud from '../db/crud/imageCrud.ts';
+import InfoTreeService from './infoTreeService.ts';
 
 class TechnologyService {
   public static async saveTechnology({ request, response }: RouterContext<string>): Promise<void> {
@@ -56,6 +57,9 @@ class TechnologyService {
         })
       );
 
+      await InfoTreeService.invalidateInfoTreeCache().catch((error) => {
+        console.warn('technology cache invalidate failed:', error);
+      });
       response.status = 201;
       response.body = newTechnology;
       return;
@@ -161,6 +165,9 @@ class TechnologyService {
         return;
       }
 
+      await InfoTreeService.invalidateInfoTreeCache().catch((error) => {
+        console.warn('technology cache invalidate failed:', error);
+      });
       response.status = 200;
       response.body = updatedTechnology;
 
@@ -182,6 +189,9 @@ class TechnologyService {
         return;
       }
 
+      await InfoTreeService.invalidateInfoTreeCache().catch((error) => {
+        console.warn('technology cache invalidate failed:', error);
+      });
       response.status = 200;
       response.body = { message: "Technology deleted successfully" };
 

@@ -11,6 +11,7 @@ services:
       - .env
     depends_on:
       - db
+      - redis
     networks:
       - nika-network
 
@@ -57,9 +58,22 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    env_file:
+      - .env
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    networks:
+      - nika-network
+    volumes:
+      - redisdata:/data
+
 networks:
   nika-network:
     driver: bridge
 
 volumes:
   pgdata:
+  redisdata:
