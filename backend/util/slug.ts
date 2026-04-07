@@ -36,6 +36,10 @@ export function generateSlug(text: string): string {
       if (char in ukrainianToLatinMap) {
         return ukrainianToLatinMap[char];
       }
+      // Spaces and underscores become hyphens
+      if (/^[\s_]$/.test(char)) {
+        return '-';
+      }
       // If not in map and not ASCII alphanumeric, skip it
       if (/^[a-zA-Z0-9]$/.test(char)) {
         return char.toLowerCase();
