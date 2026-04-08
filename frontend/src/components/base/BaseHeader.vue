@@ -1,17 +1,18 @@
 <template>
   <header class="header">
     <nav class="nav-left">
-      <div class="nav-left-inner">
-        <img src="@/assets/logo.png" alt="Logo" class="logo" />
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-        <RouterLink to="/info">Info</RouterLink>
-        <RouterLink v-if="auth.allowed" to="/admin">Admin</RouterLink>
-      </div>
+      <img src="@/assets/logo.png" alt="Logo" class="logo" />
     </nav>
+    <div class="nav-left-inner">
+      <RouterLink to="/">Наші роботи</RouterLink>
+      <RouterLink to="/shop">Крамниця</RouterLink>
+      <RouterLink to="/contacts">Контакти</RouterLink>
+      <RouterLink to="/info">Довідка користувача</RouterLink>
+      <RouterLink v-if="auth.allowed" to="/admin">Адмінка</RouterLink>
+    </div>
     <div class="nav-right">
-      <RouterLink v-if="!isAuthenticated" to="/auth">Login / Register</RouterLink>
-      <RouterLink v-else to="/" class="logout-button" @click.prevent="logout">Logout</RouterLink>
+      <RouterLink v-if="!isAuthenticated" to="/auth">Увійти / Зареєструватися</RouterLink>
+      <RouterLink v-else to="/" class="logout-button" @click.prevent="logout">Вийти</RouterLink>
     </div>
   </header>
 </template>
@@ -33,7 +34,7 @@
 .header {
   height: 120px;
   width: 100vw;
-  background-color: #024ea0;
+  background-color: #FFFFFF;
   color: white;
   display: flex;
   justify-content: space-between;
@@ -61,18 +62,18 @@
 
 .header a {
   height: 60px;
-  color: white;
+  color: #000000;
   text-decoration: none;
   padding: 1rem;
   margin-top: 20px;
-  border: 1px solid white;
+  border: 1px solid #000000;
   text-align: center;
   border-radius: 5px;
 }
 
 .header a:hover {
   background-color: white;
-  color: #007bff;
+  color: #252525;
 }
 
 .logo {
@@ -80,7 +81,7 @@
   height: auto;
 }
 .logout-button {
-  background: #e53e3e;
+  background: #FFFFFF;
   color: white;
   border: none;
   padding: 0.5rem 1rem;

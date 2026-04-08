@@ -20,6 +20,8 @@ This project is a web application built with the following technologies:
 ### Database
 
 - **PostgreSQL (PSQL)**: A powerful, open-source object-relational database system.
+- **Redis**: In-memory key-value store for treeview scenarios.
+
 
 ## Project Structure
 

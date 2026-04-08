@@ -1,112 +1,72 @@
 <template>
-  <div class="greetings">
-    <h1>Welcome to the NIKA project!</h1>
-    <h3>Here you can find information about the developers.</h3>
+  <div class="shop-page">
+  <div class="header">
+    <h1>З увагою до деталей</h1>
+    <h3>Майстерня реклами NIKA</h3>
   </div>
 
-  <!-- temporary image gallery -->
-  <div class="image-gallery">
-      <div v-for="image in images" :key="image.id" class="image-card" @click="openImage(image)">
-        <img :src="imageUrls[image.id]" :alt="image.title || 'NIKA project image'" />
-        <p v-if="image.title">{{ image.title }}</p>
-      </div>
+  <div v-if="itemsLoading">
+    <p>Завантаження...</p>
   </div>
 
-  <ImageDetailsModal v-if="selectedImage" :image="selectedImage" :imageUrl="imageUrls[selectedImage.id]" @close="selectedImage = null" />
+  <div v-else-if="itemsError">
+    <p>Виникла помилка: {{ itemsError }}</p>
+  </div>
+
+  <GalleryForm
+    v-else
+    :items="items"
+    @item-click="openModal"
+  />
+  </div>
+  <ImageDetailsModal v-if="selectedItemId" :itemId="selectedItemId" @close="closeModal" />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
-import type { IImage } from '../interfaces.ts';
-import mainApi from '@/api/main.api.ts';
-import ImageDetailsModal from '@/components/ImageDetailsModal.vue';
+import { ref, onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import type { IItem } from '../interfaces';
+import { useItemsStore } from '@/stores';
+import ImageDetailsModal from '@/components/gallery/ImageDetailsModal.vue';
+import GalleryForm from '@/components/gallery/GalleryForm.vue';
 
-const images = ref<(IImage & { data: Record<string, number>; mimeType: string })[]>([]);
-const selectedImage = ref<IImage | null>(null);
-const imageUrls = reactive<Record<string, string>>({});
+const itemsStore = useItemsStore();
+const { portfolioItems: items, imageUrls, itemsLoading, itemsError } = storeToRefs(itemsStore);
 
-onMounted(async () => {
-  try {
-    const response = await mainApi.getAllImages();
-    images.value = response.data as (IImage & { data: Record<string, number>; mimeType: string })[];
+const selectedItemId = ref<string | null>(null);
 
-    for (const img of images.value) {
-      const imageBytes = new Uint8Array(Object.values(img.data));
-      const blob = new Blob([imageBytes], { type: img.mimeType });
-      imageUrls[img.id] = URL.createObjectURL(blob);
-    }
-
-  } catch (error) {
-    console.error("Error fetching images:", error);
-  }
+onMounted(() => {
+  itemsStore.fetchItems();
 });
 
-function openImage(img: IImage) {
-  selectedImage.value = img;
+function openModal(item: IItem) {
+  selectedItemId.value = item.id;
+}
+
+function closeModal() {
+  selectedItemId.value = null;
 }
 </script>
 
 <style scoped>
-h1 {
-  font-weight: 500;
-  font-size: 2.6rem;
-  position: relative;
-  top: -10px;
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-h3 {
-  font-size: 1.2rem;
-}
-
-.greetings h1,
-.greetings h3 {
+.header h1,
+.header h3 {
   text-align: center;
-}
-.image-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-top: 2rem;
-  width: 100%;
-}
-
-.image-card {
-  border: 1px solid #eaeaea;
-  border-radius: 8px;
-  overflow: hidden;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out;
-}
-
-.image-card:hover {
-    transform: translateY(-5px);
-}
-
-.image-card img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover; 
-}
-
-.image-card p {
-  padding: 0.75rem;
   margin: 0;
-  font-weight: 500;
-  color: #333;
 }
 
-.loading-message {
-    text-align: center;
-    margin-top: 2rem;
-    color: #888;
-}
-
-
-@media (min-width: 1024px) {
-  .greetings h1,
-  .greetings h3 {
-    text-align: left;
-  }
+.shop-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
 }
 </style>

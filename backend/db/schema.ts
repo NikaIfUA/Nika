@@ -4,20 +4,58 @@ import * as t from "drizzle-orm/pg-core";
 export const categories = table('categories', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   name: t.varchar('name', { length: 255 }).notNull(),
+  slug: t.varchar('slug', { length: 255 }).notNull().unique(),
+  description: t.text('description'),
+  image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const images = table('images', {
+// Items table reflects higher-level product/item metadata (IItem)
+export const items = table('items', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
-  url: t.varchar('url', { length: 512 }).notNull(),
   title: t.varchar('title', { length: 255 }).notNull(),
   description: t.text('description'),
-  category_id: t.varchar('category_id', { length: 50 }).references(() => categories.id, { onDelete: 'set null' }), // If a category is deleted, set this to null.
   price: t.integer('price'),
   amount_available: t.integer('amount_available'),
+  cover_image_id: t.varchar('cover_image_id', { length: 50 }), // nullable by default
+  isUnique: t.boolean('is_unique').default(false).notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Images table stores file-level metadata and links to items (one item -> many images)
+export const images = table('images', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  item_id: t.varchar('item_id', { length: 50 }).references(() => items.id, { onDelete: 'cascade' }),
+  url: t.varchar('url', { length: 1024 }).notNull(),
+  description: t.text('description'),
+  resolution_width: t.integer('resolution_width'),
+  resolution_height: t.integer('resolution_height'),
+  mime_type: t.varchar('mime_type', { length: 255 }).notNull(),
+  weight: t.integer('weight'),
+  position: t.integer('position').default(0),
+  updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const categoryItems = table('category_items', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  category_id: t.varchar('category_id', { length: 50 }).notNull().references(() => categories.id, { onDelete: 'cascade' }),
+  item_id: t.varchar('item_id', { length: 50 }).notNull().references(() => items.id, { onDelete: 'cascade' }),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const materials = table('materials', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  name: t.varchar('name', { length: 255 }).notNull(),
+  slug: t.varchar('slug', { length: 255 }).notNull().unique(),
+  description: t.text('description'),
+  image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
+  parent_id: t.varchar('parent_id', { length: 50 }).references(() => materials.id, { onDelete: 'set null' }),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const imageMaterials = table('image_materials', {
@@ -28,9 +66,21 @@ export const imageMaterials = table('image_materials', {
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const materials = table('materials', {
+export const technologies = table('technologies', {
   id: t.varchar('id', { length: 50 }).primaryKey(),
   name: t.varchar('name', { length: 255 }).notNull(),
+  slug: t.varchar('slug', { length: 255 }).notNull().unique(),
+  description: t.text('description'),
+  image_id: t.varchar('image_id', { length: 50 }).references(() => images.id, { onDelete: 'set null' }),
+  parent_id: t.varchar('parent_id', { length: 50 }).references(() => technologies.id, { onDelete: 'set null' }),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const itemTechnologies = table('item_technologies', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  item_id: t.varchar('item_id', { length: 50 }).notNull().references(() => items.id, { onDelete: 'cascade' }),
+  technology_id: t.varchar('technology_id', { length: 50 }).notNull().references(() => technologies.id, { onDelete: 'cascade' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

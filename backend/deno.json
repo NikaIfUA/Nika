@@ -12,7 +12,11 @@
     "drizzle-orm/pg-core": "npm:drizzle-orm@^0.44.3/pg-core",
     "drizzle-kit": "npm:drizzle-kit@^0.31.4",
     "drizzle-orm/postgres-js": "npm:drizzle-orm@^0.44.3/postgres-js",
-    "postgres": "npm:postgres@^3.4.4"
+    "esbuild": "npm:esbuild@^0.20.2",
+    "postgres": "npm:postgres@^3.4.4",
+    "redis": "npm:redis@^4.7.0",
+    "image-size": "npm:image-size@^1.1.1",
+    "nodemailer": "npm:nodemailer@^6.9.8"
   },
   "compilerOptions": {
     "noImplicitAny": false,
@@ -23,7 +27,7 @@
   },
   "lint": {
     "rules": {
-      "exclude": [  
+      "exclude": [
         "no-explicit-any"
       ]
     }

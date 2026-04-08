@@ -1,5 +1,5 @@
 import { RouterContext } from '../dependencies.ts';
-import { Database } from '../db/crud.ts';
+import { Database } from '../db/crud/userCrud.ts';
 import { bcrypt } from '../dependencies.ts';
 import { generateToken, blacklistToken } from "../util/jwt.ts";
 
@@ -164,7 +164,6 @@ class UserService {
       // user with id '1' is whitelisted
       if (userId !== '1') {
         const blacklistedToken = await isTokenBlacklisted(token);
-        const { Database } = await import('../db/crud.ts');
         const db = new Database();
         const blacklistedUser = await db.isUserBlacklisted(String(userId));
         if (blacklistedToken || blacklistedUser) {
