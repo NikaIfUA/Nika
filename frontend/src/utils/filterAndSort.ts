@@ -3,6 +3,7 @@ import type { IItem } from '@/interfaces';
 export interface FilterOptions {
   selectedCategories: string[];
   selectedMaterials: string[];
+  selectedTechnologies: string[];
   priceRange: [number, number];
   sortBy: string;
 }
@@ -34,6 +35,13 @@ export function filterItems(items: IItem[], filters: FilterOptions): IItem[] {
         filters.selectedMaterials.includes(mat.id)
       );
       if (!hasMaterial) return false;
+    }
+
+    if (filters.selectedTechnologies.length > 0) {
+      const hasTechnology = item.technologies?.some(tech => 
+        filters.selectedTechnologies.includes(tech.id)
+      );
+      if (!hasTechnology) return false;
     }
 
     const price = item.price || 0;
@@ -92,6 +100,19 @@ export function getAvailableMaterials(items: IItem[]): Array<{ title: string; va
   }));
 }
 
+export function getAvailableTechnologies(items: IItem[]): Array<{ title: string; value: string }> {
+  const technologies = new Map<string, string>();
+  items.forEach(item => {
+    item.technologies?.forEach(tech => {
+      if (tech.id && tech.name) technologies.set(tech.id, tech.name);
+    });
+  });
+  return Array.from(technologies.entries()).map(([id, name]) => ({
+    title: name,
+    value: id,
+  }));
+}
+
 export function hasActiveFilters(
   filters: FilterOptions,
   priceRange: PriceRange
@@ -99,6 +120,7 @@ export function hasActiveFilters(
   return (
     filters.selectedCategories.length > 0 ||
     filters.selectedMaterials.length > 0 ||
+    filters.selectedTechnologies.length > 0 ||
     filters.priceRange[0] !== priceRange.min ||
     filters.priceRange[1] !== priceRange.max
   );

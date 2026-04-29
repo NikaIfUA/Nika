@@ -23,6 +23,11 @@
         Технології
       </v-tab>
 
+      <v-tab value="facebook" to="/admin/facebook-posts">
+        <v-icon start icon="mdi-facebook"></v-icon>
+        Facebook
+      </v-tab>
+
       <v-spacer></v-spacer>
     </v-tabs>
 
@@ -44,6 +49,7 @@ watch(() => route.path, () => {
   if (route.path.includes('materials')) activeTab.value = 'material';
   else if (route.path.includes('categories')) activeTab.value = 'category';
   else if (route.path.includes('technologies')) activeTab.value = 'technology';
+  else if (route.path.includes('facebook')) activeTab.value = 'facebook';
   else if (route.path.includes('items')) activeTab.value = 'items';
   else activeTab.value = 'items';
 }, { immediate: true });

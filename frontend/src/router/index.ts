@@ -98,6 +98,21 @@ const router = createRouter({
           name: 'editItem',
           component: () => import('../components/items/ItemUploadForm.vue'),
         },
+        {
+          path: 'facebook-posts',
+          name: 'facebookPosts',
+          component: () => import('../components/facebook/FacebookPostList.vue'),
+        },
+        {
+          path: 'facebook-posts/add',
+          name: 'addFacebookPost',
+          component: () => import('../components/facebook/FacebookPostAddForm.vue'),
+        },
+        {
+          path: 'facebook-posts/:id',
+          name: 'editFacebookPost',
+          component: () => import('../components/facebook/FacebookPostAddForm.vue'),
+        },
       ],
     },
     {

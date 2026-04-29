@@ -100,3 +100,12 @@ export const blacklisted_tokens = table('blacklisted_tokens', {
   user_id: t.varchar('user_id', { length: 50 }).references(() => users.id, { onDelete: 'cascade' }),
   created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const facebook_posts = table('facebook_posts', {
+  id: t.varchar('id', { length: 50 }).primaryKey(),
+  title: t.varchar('title', { length: 255 }),
+  embed_html: t.text('embed_html').notNull(),
+  position: t.integer('position').default(0),
+  created_at: t.timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: t.timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});

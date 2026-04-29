@@ -1,6 +1,6 @@
 import { API_URL } from '@/env';
 import axios, { type AxiosResponse } from 'axios';
-import type { IImage, IItem, IMaterial, ITechnology } from '@/interfaces';
+import type { IImage, IItem, IMaterial, ITechnology, IFacebookPost } from '@/interfaces';
 
 const instance = axios.create({ baseURL: API_URL });
 
@@ -156,6 +156,23 @@ const mainApi = {
 
   sendContactMessage: (data: { subject: string; description: string; email: string; source: string }) => {
     return instance.post(`/contact`, data);
+  },
+
+  // Facebook posts
+  getFacebookPosts: (): Promise<AxiosResponse<IFacebookPost[]>> => {
+    return instance.get(`/facebook-posts`);
+  },
+
+  saveFacebookPost: (data: { title?: string; embed_html: string; position?: number }): Promise<AxiosResponse<IFacebookPost>> => {
+    return instance.post(`/facebook-posts`, data);
+  },
+
+  updateFacebookPost: (id: string, data: { title?: string; embed_html?: string; position?: number }): Promise<AxiosResponse<IFacebookPost>> => {
+    return instance.put(`/facebook-posts/${id}`, data);
+  },
+
+  deleteFacebookPost: (id: string): Promise<AxiosResponse<{ message: string }>> => {
+    return instance.delete(`/facebook-posts/${id}`);
   },
 };
 

@@ -138,6 +138,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import type { IItem } from '../interfaces';
 import { useItemsStore } from '@/stores';
@@ -150,6 +151,7 @@ import {
   sortItems,
   getAvailableCategories,
   getAvailableMaterials,
+  getAvailableTechnologies,
   hasActiveFilters as checkActiveFilters,
   type FilterOptions,
 } from '@/utils/filterAndSort';
@@ -159,6 +161,7 @@ const showFilters = ref(false);
 const sortBy = ref<string>('title-asc');
 const selectedCategories = ref<string[]>([]);
 const selectedMaterials = ref<string[]>([]);
+const selectedTechnologies = ref<string[]>([]);
 const priceRange = ref<[number, number]>([0, 1000]);
 
 const sortOptions = [
@@ -173,6 +176,7 @@ const sortOptions = [
 const itemsStore = useItemsStore();
 const { shopItems, imageUrls, itemsLoading, itemsError } = storeToRefs(itemsStore);
 
+const route = useRoute();
 const selectedItemId = ref<string | null>(null);
 
 const availableCategories = computed(() => {
@@ -181,6 +185,10 @@ const availableCategories = computed(() => {
 
 const availableMaterials = computed(() => {
   return getAvailableMaterials(shopItems.value);
+});
+
+const availableTechnologies = computed(() => {
+  return getAvailableTechnologies(shopItems.value);
 });
 
 const priceRangeInfo = computed(() => {
@@ -193,12 +201,27 @@ const maxPrice = computed(() => priceRangeInfo.value.max);
 onMounted(() => {
   itemsStore.fetchItems();
   priceRange.value = [minPrice.value, maxPrice.value];
+
+  // Apply query param filters from navigation (e.g. home page links)
+  if (route.query.category) {
+    const val = route.query.category;
+    selectedCategories.value = Array.isArray(val) ? val as string[] : [val as string];
+  }
+  if (route.query.material) {
+    const val = route.query.material;
+    selectedMaterials.value = Array.isArray(val) ? val as string[] : [val as string];
+  }
+  if (route.query.technology) {
+    const val = route.query.technology;
+    selectedTechnologies.value = Array.isArray(val) ? val as string[] : [val as string];
+  }
 });
 
 const items = computed(() => {
   const filterOptions: FilterOptions = {
     selectedCategories: selectedCategories.value,
     selectedMaterials: selectedMaterials.value,
+    selectedTechnologies: selectedTechnologies.value,
     priceRange: priceRange.value,
     sortBy: sortBy.value,
   };
@@ -212,6 +235,7 @@ const hasActiveFilters = computed(() => {
     {
       selectedCategories: selectedCategories.value,
       selectedMaterials: selectedMaterials.value,
+      selectedTechnologies: selectedTechnologies.value,
       priceRange: priceRange.value,
       sortBy: sortBy.value,
     },
@@ -222,6 +246,7 @@ const hasActiveFilters = computed(() => {
 function resetFilters() {
   selectedCategories.value = [];
   selectedMaterials.value = [];
+  selectedTechnologies.value = [];
   priceRange.value = [minPrice.value, maxPrice.value];
 }
 

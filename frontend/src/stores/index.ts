@@ -2,12 +2,14 @@ import { useCategoriesStore } from './categories'
 import { useMaterialsStore } from './materials'
 import { useItemsStore } from './items'
 import { useTechnologiesStore } from './technologies'
+import { useFacebookPostsStore } from './facebookPosts'
 
 // Export individual stores
 export { useCategoriesStore } from './categories'
 export { useMaterialsStore } from './materials'
 export { useItemsStore } from './items'
 export { useTechnologiesStore } from './technologies'
+export { useFacebookPostsStore } from './facebookPosts'
 
 // Composite function for fetching all initial data
 export async function fetchInitialData() {
