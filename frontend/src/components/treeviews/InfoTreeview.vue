@@ -11,9 +11,9 @@
           class="tree-node"
           :class="{
             'tree-node--root': item.depth === 0,
-            'tree-node--clickable': !!item.slug,
+            'tree-node--clickable': !!item.slug || props.selectable,
             'tree-node--loading': loadingIds.has(item.id),
-            'tree-node--active': item.slug !== null && item.slug === props.activeSlug,
+            'tree-node--active': !props.selectable && item.slug !== null && item.slug === props.activeSlug,
           }"
           :style="{ paddingLeft: `${item.depth * 20 + 8}px` }"
           @click="onNodeClick(item)"
@@ -30,6 +30,14 @@
             </v-icon>
           </button>
           <span v-else class="tree-toggle-spacer" />
+          <v-checkbox-btn
+            v-if="props.selectable"
+            :model-value="isSelected(item.id)"
+            density="compact"
+            class="tree-checkbox"
+            @update:model-value="updateSelected(item.id, !!$event)"
+            @click.stop
+          />
           <span class="tree-label">{{ item.title }}</span>
         </div>
       </template>
@@ -69,10 +77,21 @@
     hasChildren: boolean;
   };
 
-  const props = defineProps<{
+  const props = withDefaults(defineProps<{
     type: 'material' | 'technology';
-    searchNodes: IFlatNode[] | null;
+    searchNodes?: IFlatNode[] | null;
     activeSlug?: string | null;
+    selectable?: boolean;
+    selectedIds?: string[];
+  }>(), {
+    searchNodes: null,
+    activeSlug: null,
+    selectable: false,
+    selectedIds: () => [],
+  });
+
+  const emit = defineEmits<{
+    (e: 'update:selectedIds', value: string[]): void;
   }>();
 
   const router = useRouter();
@@ -96,6 +115,20 @@
     if (props.searchNodes !== null) return props.searchNodes;
     return flattenTree(tree.value, 0);
   });
+
+  const selectedSet = computed(() => new Set(props.selectedIds));
+
+  const isSelected = (id: string): boolean => selectedSet.value.has(id);
+
+  const updateSelected = (id: string, selected: boolean) => {
+    const next = new Set(props.selectedIds);
+    if (selected) {
+      next.add(id);
+    } else {
+      next.delete(id);
+    }
+    emit('update:selectedIds', Array.from(next));
+  };
 
   const findNode = (nodes: ITreeNode[], id: string): ITreeNode | null => {
     for (const node of nodes) {
@@ -154,6 +187,11 @@
   };
 
   const onNodeClick = (node: IFlatNode) => {
+    if (props.selectable) {
+      updateSelected(node.id, !isSelected(node.id));
+      return;
+    }
+
     if (!node.slug) return;
     router.push({ name: 'infoDetails', params: { type: props.type, slug: node.slug } });
   };
@@ -234,6 +272,7 @@
   border: 1px solid #eaecf0;
   border-radius: 2px;
   padding: 0.75rem;
+  text-align: left;
 }
 
 .tree-node {
@@ -308,6 +347,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-left: 4px;
+  text-align: left;
+}
+
+.tree-checkbox {
+  margin-right: 4px;
 }
 
 .empty-state {

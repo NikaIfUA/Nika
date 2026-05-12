@@ -137,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import type { IItem } from '../interfaces';
@@ -163,6 +163,7 @@ const selectedCategories = ref<string[]>([]);
 const selectedMaterials = ref<string[]>([]);
 const selectedTechnologies = ref<string[]>([]);
 const priceRange = ref<[number, number]>([0, 1000]);
+const isPriceRangeInitialized = ref(false);
 
 const sortOptions = [
   { title: 'За назвою (А-Я)', value: 'title-asc' },
@@ -198,23 +199,35 @@ const priceRangeInfo = computed(() => {
 const minPrice = computed(() => priceRangeInfo.value.min);
 const maxPrice = computed(() => priceRangeInfo.value.max);
 
-onMounted(() => {
-  itemsStore.fetchItems();
-  priceRange.value = [minPrice.value, maxPrice.value];
+function normalizeQueryParam(value: unknown): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(String);
+  return [String(value)];
+}
 
-  // Apply query param filters from navigation (e.g. home page links)
-  if (route.query.category) {
-    const val = route.query.category;
-    selectedCategories.value = Array.isArray(val) ? val as string[] : [val as string];
-  }
-  if (route.query.material) {
-    const val = route.query.material;
-    selectedMaterials.value = Array.isArray(val) ? val as string[] : [val as string];
-  }
-  if (route.query.technology) {
-    const val = route.query.technology;
-    selectedTechnologies.value = Array.isArray(val) ? val as string[] : [val as string];
-  }
+watch(
+  () => route.query,
+  (query) => {
+    selectedCategories.value = normalizeQueryParam(query.category);
+    selectedMaterials.value = normalizeQueryParam(query.material);
+    selectedTechnologies.value = normalizeQueryParam(query.technology);
+  },
+  { immediate: true }
+);
+
+watch(
+  priceRangeInfo,
+  (range) => {
+    if (!isPriceRangeInitialized.value) {
+      priceRange.value = [range.min, range.max];
+      isPriceRangeInitialized.value = true;
+    }
+  },
+  { immediate: true }
+);
+
+onMounted(async () => {
+  await itemsStore.fetchItems();
 });
 
 const items = computed(() => {

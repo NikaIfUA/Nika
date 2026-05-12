@@ -122,23 +122,14 @@
       
       <v-col cols="12">
         <div class="mb-2 font-weight-medium">Матеріали:</div>
-        <v-expansion-panels v-if="materials.length > 0">
-          <v-expansion-panel
-            v-for="material in materials"
-            :key="material.id"
-          >
-            <v-expansion-panel-title>
-              <v-checkbox
-                :model-value="isMaterialSelected(material.id)"
-                @update:model-value="toggleMaterial(material.id, !!$event)"
-                @click.stop
-                :label="material.name"
-                hide-details
-                density="compact"
-              />
-            </v-expansion-panel-title>
-          </v-expansion-panel>
-        </v-expansion-panels>
+        <InfoTreeview
+          v-if="materials.length > 0"
+          type="material"
+          :search-nodes="null"
+          selectable
+          :selected-ids="selectedMaterialIdsModel"
+          @update:selected-ids="selectedMaterialIdsModel = $event"
+        />
         <div v-else class="text-caption text-grey">
           Матеріали не знайдено
         </div>
@@ -146,23 +137,14 @@
       
       <v-col cols="12">
         <div class="mb-2 font-weight-medium">Технології:</div>
-        <v-expansion-panels v-if="technologies.length > 0">
-          <v-expansion-panel
-            v-for="tech in technologies"
-            :key="tech.id"
-          >
-            <v-expansion-panel-title>
-              <v-checkbox
-                :model-value="isTechnologySelected(tech.id)"
-                @update:model-value="toggleTechnology(tech.id, !!$event)"
-                @click.stop
-                :label="tech.name"
-                hide-details
-                density="compact"
-              />
-            </v-expansion-panel-title>
-          </v-expansion-panel>
-        </v-expansion-panels>
+        <InfoTreeview
+          v-if="technologies.length > 0"
+          type="technology"
+          :search-nodes="null"
+          selectable
+          :selected-ids="selectedTechnologyIdsModel"
+          @update:selected-ids="selectedTechnologyIdsModel = $event"
+        />
         <div v-else class="text-caption text-grey">
           Технології не знайдено
         </div>
@@ -204,6 +186,7 @@ import mainApi from '@/api/main.api';
 import { API_URL } from '@/env';
 import { useCategoriesStore, useMaterialsStore, useTechnologiesStore, useItemsStore } from '@/stores';
 import ConfirmDeleteDialog from '@/components/shared/ConfirmDeleteForm.vue';
+import InfoTreeview from '@/components/treeviews/InfoTreeview.vue';
 
 const categoriesStore = useCategoriesStore();
 const materialsStore = useMaterialsStore();
@@ -232,6 +215,20 @@ const itemData = reactive({
 const selectedTechnologies = ref<Set<string>>(new Set());
 const selectedCategories = ref<Set<string>>(new Set());
 const selectedMaterials = ref<Set<string>>(new Set());
+
+const selectedMaterialIdsModel = computed<string[]>({
+  get: () => Array.from(selectedMaterials.value),
+  set: (ids) => {
+    selectedMaterials.value = new Set(ids);
+  },
+});
+
+const selectedTechnologyIdsModel = computed<string[]>({
+  get: () => Array.from(selectedTechnologies.value),
+  set: (ids) => {
+    selectedTechnologies.value = new Set(ids);
+  },
+});
 
 const newFiles = ref<File[]>([]);
 const imagePreviews = ref<string[]>([]);
@@ -360,18 +357,6 @@ function selectImage(index: number) {
   selectedPreviewIndex.value = (selectedPreviewIndex.value === index) ? null : index;
 }
 
-function isTechnologySelected(techId: string): boolean {
-  return selectedTechnologies.value.has(techId);
-}
-
-function toggleTechnology(techId: string, selected: boolean) {
-  if (selected) {
-    selectedTechnologies.value.add(techId);
-  } else {
-    selectedTechnologies.value.delete(techId);
-  }
-}
-
 function isCategorySelected(categoryId: string): boolean {
   return selectedCategories.value.has(categoryId);
 }
@@ -381,18 +366,6 @@ function toggleCategory(categoryId: string, selected: boolean) {
     selectedCategories.value.add(categoryId);
   } else {
     selectedCategories.value.delete(categoryId);
-  }
-}
-
-function isMaterialSelected(materialId: string): boolean {
-  return selectedMaterials.value.has(materialId);
-}
-
-function toggleMaterial(materialId: string, selected: boolean) {
-  if (selected) {
-    selectedMaterials.value.add(materialId);
-  } else {
-    selectedMaterials.value.delete(materialId);
   }
 }
 
