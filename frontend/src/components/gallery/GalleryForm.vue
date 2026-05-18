@@ -1,7 +1,22 @@
 <template>
-  <div class="image-gallery">
+  <div class="gallery-container">
+    <div v-if="categoryOptions.length > 1" class="gallery-filters">
+      <label for="gallery-category-filter" class="gallery-filter-label">Категорія:</label>
+      <select id="gallery-category-filter" v-model="selectedCategory" class="gallery-filter-select">
+        <option value="all">Всі категорії</option>
+        <option
+          v-for="category in categoryOptions"
+          :key="category.id"
+          :value="category.id"
+        >
+          {{ category.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="image-gallery">
     <div 
-      v-for="item in items" 
+      v-for="item in filteredItems" 
       :key="item.id" 
       class="image-card" 
       @click="onItemClick(item)"
@@ -16,12 +31,17 @@
       </div>
       <p v-if="item.title">{{ item.title }}</p>
     </div>
+
+    <div v-if="filteredItems.length === 0" class="gallery-empty-state">
+      Немає робіт у вибраній категорії.
+    </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted, type PropType } from 'vue';
-import type { IItem } from '../interfaces';
+import { ref, watch, onUnmounted, computed, type PropType } from 'vue';
+import type { ICategory, IItem } from '../../interfaces';
 import mainApi from '@/api/main.api';
 
 const props = defineProps({
@@ -36,6 +56,31 @@ const emit = defineEmits<{
 }>();
 
 const thumbnails = ref<Record<string, string>>({});
+const selectedCategory = ref<string>('all');
+
+const categoryOptions = computed<ICategory[]>(() => {
+  const categoryMap = new Map<string, ICategory>();
+
+  props.items.forEach((item) => {
+    item.categories?.forEach((category) => {
+      if (category?.id && !categoryMap.has(category.id)) {
+        categoryMap.set(category.id, category);
+      }
+    });
+  });
+
+  return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'uk'));
+});
+
+const filteredItems = computed<IItem[]>(() => {
+  if (selectedCategory.value === 'all') {
+    return props.items;
+  }
+
+  return props.items.filter((item) =>
+    item.categories?.some((category) => category.id === selectedCategory.value)
+  );
+});
 
 async function generateThumbnail(item: IItem): Promise<void> {
   if (!item.coverImage || thumbnails.value[item.id]) return;
@@ -120,6 +165,10 @@ async function loadAllThumbnails() {
 
 // Завантажуємо thumbnails при зміні items
 watch(() => props.items, () => {
+  const categoryExists = categoryOptions.value.some((category) => category.id === selectedCategory.value);
+  if (!categoryExists) {
+    selectedCategory.value = 'all';
+  }
   loadAllThumbnails();
 }, { immediate: true });
 
@@ -134,6 +183,31 @@ function onItemClick(item: IItem) {
 </script>
 
 <style scoped>
+.gallery-container {
+  width: 100%;
+}
+
+.gallery-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.gallery-filter-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.gallery-filter-select {
+  min-width: 240px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+}
+
 .image-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -177,5 +251,24 @@ function onItemClick(item: IItem) {
   margin: 0;
   font-weight: 500;
   color: #333;
+}
+
+.gallery-empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #666;
+  padding: 1.5rem 0;
+}
+
+@media (max-width: 640px) {
+  .gallery-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gallery-filter-select {
+    width: 100%;
+    min-width: 0;
+  }
 }
 </style>

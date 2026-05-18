@@ -1,9 +1,5 @@
 <template>
   <div class="home-page">
-    <div class="header">
-      <h1>З увагою до деталей</h1>
-      <h3>Майстерня реклами NIKA</h3>
-    </div>
 
     <v-row class="home-content">
       <!-- Main content column -->
