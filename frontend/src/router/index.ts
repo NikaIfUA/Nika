@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import TheHomeView from '../views/TheHomeView.vue'
-import TheAboutView from '../views/TheAboutView.vue'
-import TheInfoView from '../views/TheInfoView.vue'
+import TheShopView from '../views/TheShopView.vue'
+import TheContactsView from '../views/TheContactsView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,40 +13,113 @@ const router = createRouter({
       component: TheHomeView,
     },
     {
-      path: '/about',
-      name: 'about',
-      component: TheAboutView,
+      path: '/shop',
+      name: 'shop',
+      component: TheShopView,
+    },
+    {
+      path: '/contacts',
+      name: 'contacts',
+      component: TheContactsView,
     },
     {
       path: '/info',
       name: 'info',
-      component: TheInfoView,
+      component: () => import('../views/TheInfoView.vue'),
+    },
+    {
+      path: '/info/:type/:slug',
+      name: 'infoDetails',
+      component: () => import('../views/TheInfoDetailsView.vue'),
     },
     {
       path: '/admin',
       name: 'admin',
       component: () => import('../views/TheAdminView.vue'),
-    },
-    {
-      path: '/admin/image',
-      name: 'uploadImage',
-      component: () => import('../components/ImageUploadForm.vue'),
-    },
-    {
-      path: '/admin/category',
-      name: 'uploadCategory',
-      component: () => import('../components/CategoryUploadForm.vue'),
-    },
-    {
-      path: '/admin/material',
-      name: 'uploadMaterial',
-      component: () => import('../components/MaterialUploadForm.vue'),
+      redirect: '/admin/items',
+      children: [
+        {
+          path: 'materials',
+          name: 'materials',
+          component: () => import('../components/materials/MaterialUploadForm.vue'),
+        },
+        {
+          path: 'materials/add',
+          name: 'addMaterial',
+          component: () => import('../components/materials/MaterialAddForm.vue'),
+        },
+        {
+          path: 'materials/:id',
+          name: 'editMaterial',
+          component: () => import('../components/materials/MaterialAddForm.vue'),
+        },
+        {
+          path: 'technologies',
+          name: 'technologies',
+          component: () => import('../components/technologies/TechnologyUploadForm.vue'),
+        },
+        {
+          path: 'technologies/add',
+          name: 'addTechnology',
+          component: () => import('../components/technologies/TechnologyAddForm.vue'),
+        },
+        {
+          path: 'technologies/:id',
+          name: 'editTechnology',
+          component: () => import('../components/technologies/TechnologyAddForm.vue'),
+        },
+        {
+          path: 'categories',
+          name: 'categories',
+          component: () => import('../components/categories/CategoryUploadForm.vue'),
+        },
+        {
+          path: 'categories/add',
+          name: 'addCategory',
+          component: () => import('../components/categories/CategoryAddForm.vue'),
+        },
+        {
+          path: 'categories/:id',
+          name: 'editCategory',
+          component: () => import('../components/categories/CategoryAddForm.vue'),
+        },
+        {
+          path: 'items',
+          name: 'items',
+          component: () => import('../components/items/ItemChooseToUploadForm.vue'),
+        },
+        {
+          path: 'items/new',
+          name: 'uploadItem',
+          component: () => import('../components/items/ItemUploadForm.vue'),
+        },
+        {
+          path: 'items/:id',
+          name: 'editItem',
+          component: () => import('../components/items/ItemUploadForm.vue'),
+        },
+        {
+          path: 'facebook-posts',
+          name: 'facebookPosts',
+          component: () => import('../components/facebook/FacebookPostList.vue'),
+        },
+        {
+          path: 'facebook-posts/add',
+          name: 'addFacebookPost',
+          component: () => import('../components/facebook/FacebookPostAddForm.vue'),
+        },
+        {
+          path: 'facebook-posts/:id',
+          name: 'editFacebookPost',
+          component: () => import('../components/facebook/FacebookPostAddForm.vue'),
+        },
+      ],
     },
     {
       path: '/auth',
       name: 'auth',
       component: () => import('../views/TheAuthView.vue'),
-    }
+    },
   ],
 })
 

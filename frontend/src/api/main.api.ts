@@ -1,6 +1,6 @@
 import { API_URL } from '@/env';
 import axios, { type AxiosResponse } from 'axios';
-import type { IImage } from '@/interfaces';
+import type { IImage, IItem, IMaterial, ITechnology, IFacebookPost } from '@/interfaces';
 
 const instance = axios.create({ baseURL: API_URL });
 
@@ -26,56 +26,154 @@ instance.interceptors.request.use(async (config) => {
 
 
 const mainApi = {
-  getFileContent: async (fileName: string): Promise<AxiosResponse<string>> => {
-    return await instance.get(`/get-file-content/${fileName}`);
+  getAllItems: (): Promise<AxiosResponse<IItem[]>> => {
+    return instance.get('/items');
   },
 
-  getInfo: async (): Promise<AxiosResponse<string>> => {
-    return await instance.get(`/get-info`);
+  getItemById: (id: string): Promise<AxiosResponse<IItem>> => {
+    return instance.get(`/items/${id}`);
   },
 
-  getAllImages: async (): Promise<AxiosResponse<IImage[]>> => {
-    return await instance.get(`/get-all-images`);
+  createItem: (formData: FormData): Promise<AxiosResponse<IItem>> => {
+    return instance.post('/items', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
-  getImageById: async (id: string): Promise<AxiosResponse<Blob>> => {
-    return await instance.get(`/get-image-by-id/${id}`, { responseType: 'blob' });
+  updateItem: (id: string, formData: FormData): Promise<AxiosResponse<IItem>> => {
+    return instance.put(`/items/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 
-  getAllCategories: async (): Promise<AxiosResponse<any[]>> => {
-    return await instance.get(`/get-categories`);
+  deleteItem: (id: string): Promise<AxiosResponse<{ message: string }>> => {
+    return instance.delete(`/items/${id}`);
   },
 
-  saveCategory: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${API_URL}/save-category`, payload);
+  getImage: (itemId: string): Promise<AxiosResponse<Blob>> => {
+    return instance.get(`/items/${itemId}/image`, { responseType: 'blob' });
   },
 
-  saveMaterial: async (payload: { name: string }): Promise<AxiosResponse<any>> => {
-    return await axios.post(`${API_URL}/save-material`, payload);
+  getAllImages: (itemId: string, imageId: string): Promise<AxiosResponse<Blob>> => {
+    return instance.get(`/items/${itemId}/images/${imageId}`, { responseType: 'blob' });
   },
 
-  getAllMaterials: async (): Promise<AxiosResponse<any[]>> => {
-    return await instance.get(`/get-materials`);
+  getAllCategories: (): Promise<AxiosResponse<any[]>> => {
+    return instance.get(`/get-categories`);
   },
 
-  login: async (credentials: { email: string; password: string }) => {
-    return await instance.post(`/auth/login`, credentials)
+  saveCategory: (payload: FormData | { name: string; description?: string }): Promise<AxiosResponse<any>> => {
+    const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.post(`/save-category`, payload, config);
+  },
+
+  updateCategory: (id: string, data: FormData | { name: string; description?: string }): Promise<AxiosResponse<any>> => {
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.put(`/categories/${id}`, data, config);
   },
   
-  register: async (data: { name: string; email: string; password: string }) => {
-    return await instance.post(`/auth/register`, data)
+  deleteCategory: (id: string): Promise<AxiosResponse<void>> => {
+    return instance.delete(`/categories/${id}`);
   },
 
-  logout: async () => {
-    return await instance.post(`/auth/logout`)
+  getCategoryImageUrl: (categoryId: string, imageId: string): string => {
+    return `${API_URL}/categories/${categoryId}/images/${imageId}`;
   },
 
-  saveImage: async (formData: FormData): Promise<AxiosResponse<any>> => {
-    // Let browser/axios set multipart Content-Type with proper boundary automatically
-    return await axios.post(`${API_URL}/save-image`, formData);
+  getAllMaterials: (): Promise<AxiosResponse<IMaterial[]>> => {
+    return instance.get(`/get-materials`);
   },
 
-  checkAuth: async () => { return await instance.get(`/auth/check`) },
+  saveMaterial: (payload: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<IMaterial>> => {
+    const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.post(`/save-material`, payload, config);
+  },
+
+  updateMaterial(id: string, data: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<IMaterial>> {
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.put(`/materials/${id}`, data, config);
+  },
+
+  deleteMaterial(id: string): Promise<AxiosResponse<void>> {
+    return instance.delete(`/materials/${id}`);
+  },
+
+  getMaterialImageUrl: (materialId: string, imageId: string): string => {
+    return `${API_URL}/materials/${materialId}/images/${imageId}`;
+  },
+
+  getAllTechnologies: (): Promise<AxiosResponse<ITechnology[]>> => {
+    return instance.get(`/get-technologies`);
+  },
+
+  getInfoTree: (): Promise<AxiosResponse<{ materials: IMaterial[]; technologies: ITechnology[]; cachedAt: string }>> => {
+    return instance.get(`/get-info-tree`);
+  },
+
+  getInfoTreeChildren: (type: 'material' | 'technology', parentId: string | null): Promise<AxiosResponse<{ items: Array<{ id: string; name: string; slug: string; description: string | null; parentId: string | null; hasChildren: boolean }>; cachedAt: string }>> => {
+    const params: Record<string, string> = { type };
+    if (parentId) params.parentId = parentId;
+    return instance.get(`/get-info-tree/children`, { params });
+  },
+
+  getTechnologyBySlug: (slug: string): Promise<AxiosResponse<ITechnology>> => {
+    return instance.get(`/technologies/${slug}`);
+  },
+
+  saveTechnology: (payload: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<ITechnology>> => {
+    const config = payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.post(`/save-technology`, payload, config);
+  },
+
+  updateTechnology(id: string, data: FormData | { name: string; description?: string; parentId?: string | null }): Promise<AxiosResponse<ITechnology>> {
+    const config = data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+    return instance.put(`/technologies/${id}`, data, config);
+  },
+
+  deleteTechnology(id: string): Promise<AxiosResponse<void>> {
+    return instance.delete(`/technologies/${id}`);
+  },
+
+  getTechnologyImageUrl: (technologyId: string, imageId: string): string => {
+    return `${API_URL}/technologies/${technologyId}/images/${imageId}`;
+  },
+
+  login: (credentials: { email: string; password: string }) => {
+    return instance.post(`/auth/login`, credentials);
+  },
+
+  register: (data: { name: string; email: string; password: string }) => {
+    return instance.post(`/auth/register`, data);
+  },
+
+  logout: () => {
+    return instance.post(`/auth/logout`);
+  },
+
+  checkAuth: () => {
+    return instance.get(`/auth/check`);
+  },
+
+  sendContactMessage: (data: { subject: string; description: string; email: string; source: string }) => {
+    return instance.post(`/contact`, data);
+  },
+
+  // Facebook posts
+  getFacebookPosts: (): Promise<AxiosResponse<IFacebookPost[]>> => {
+    return instance.get(`/facebook-posts`);
+  },
+
+  saveFacebookPost: (data: { title?: string; embed_html: string; position?: number }): Promise<AxiosResponse<IFacebookPost>> => {
+    return instance.post(`/facebook-posts`, data);
+  },
+
+  updateFacebookPost: (id: string, data: { title?: string; embed_html?: string; position?: number }): Promise<AxiosResponse<IFacebookPost>> => {
+    return instance.put(`/facebook-posts/${id}`, data);
+  },
+
+  deleteFacebookPost: (id: string): Promise<AxiosResponse<{ message: string }>> => {
+    return instance.delete(`/facebook-posts/${id}`);
+  },
 };
 
 export default mainApi;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router';
-import BaseHeader from './components/BaseHeader.vue';
+import BaseHeader from './components/base/BaseHeader.vue';
 </script>
 
 <template>

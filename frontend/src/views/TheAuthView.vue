@@ -14,9 +14,9 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import AuthContainer from '@/components/Auth/AuthContainer.vue'
-import LoginForm from '@/components/Auth/LoginForm.vue'
-import RegisterForm from '@/components/Auth/RegisterForm.vue'
+import AuthContainer from '@/components/base/Auth/AuthContainer.vue'
+import LoginForm from '@/components/base/Auth/LoginForm.vue'
+import RegisterForm from '@/components/base/Auth/RegisterForm.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
